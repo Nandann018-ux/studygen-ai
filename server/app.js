@@ -3,24 +3,21 @@ const cors = require('cors');
 
 const healthRoutes = require('./routes/health.routes');
 const authRoutes = require('./routes/auth.routes');
+const subjectRoutes = require('./routes/subject.routes');
 
 const app = express();
-
-// Middleware
 app.use(cors());
 app.use(express.json());
 
-// Routes
 app.use('/api/health', healthRoutes);
 app.use('/api/auth', authRoutes);
-
-// Basic 404 + error handling
+app.use('/api/subjects', subjectRoutes);
 app.use((req, res) => {
   res.status(404).json({ message: 'Not Found' });
 });
 
+
 app.use((err, req, res, next) => {
-  // eslint-disable-next-line no-console
   console.error(err);
   res.status(500).json({ message: 'Internal Server Error' });
 });

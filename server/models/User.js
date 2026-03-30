@@ -12,9 +12,6 @@ const userSchema = new mongoose.Schema(
 
 userSchema.pre('save', async function preSave() {
   if (!this.isModified('password')) return;
-
-  // If controller already hashed the password, avoid hashing again.
-  // bcrypt hashes typically start with "$2a$", "$2b$", or "$2y$".
   if (typeof this.password === 'string' && this.password.startsWith('$2')) return;
 
   const saltRounds = 10;
