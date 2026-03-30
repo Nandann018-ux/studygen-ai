@@ -31,4 +31,14 @@ async function generatePlan(req, res) {
   }
 }
 
-module.exports = { generatePlan };
+async function getPlan(req, res) {
+  try {
+    const plan = await StudyPlan.find({ userId: req.user.userId }).sort({ date: 1 });
+    return res.status(200).json(plan);
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({ message: 'Internal Server Error' });
+  }
+}
+
+module.exports = { generatePlan, getPlan };
