@@ -10,24 +10,16 @@ const userSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-userSchema.pre('save', async function preSave(next) {
-  try {
-    if (!this.isModified('password')) return next();
+userSchema.pre('save', async function preSave() {
+  if (!this.isModified('password')) return;
 
-    // If controller already hashed the password, avoid hashing again.
-    // bcrypt hashes typically start with "$2a$", "$2b$", or "$2y$".
-    if (typeof this.password === 'string' && this.password.startsWith('$2')) {
-      return next();
-    }
+  // If controller already hashed the password, avoid hashing again.
+  // bcrypt hashes typically start with "$2a$", "$2b$", or "$2y$".
+  if (typeof this.password === 'string' && this.password.startsWith('$2')) return;
 
-    const saltRounds = 10;
-    const hashedPassword = await bcrypt.hash(this.password, saltRounds);
-    this.password = hashedPassword;
-
-    return next();
-  } catch (err) {
-    return next(err);
-  }
+  const saltRounds = 10;
+  const hashedPassword = await bcrypt.hash(this.password, saltRounds);
+  this.password = hashedPassword;
 });
 
 module.exports = mongoose.model('User', userSchema);
