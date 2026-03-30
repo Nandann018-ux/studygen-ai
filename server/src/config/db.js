@@ -41,7 +41,7 @@ async function connectDB() {
   }
 
   try {
-    const finalUri = uri;
+    const finalUri = encodeMongoPassword(uri);
     console.log('Connecting to MongoDB...');
     await mongoose.connect(finalUri);
     console.log('MongoDB connected');
