@@ -8,7 +8,7 @@ async function generatePlan(req, res) {
     const subjects = await Subject.find({ userId: req.user.userId });
     
     // call existing studyPlanGenerator function
-    const plan = generateStudyPlan(subjects);
+    const plan = await generateStudyPlan(subjects);
     
     // delete old plan before saving new one
     await StudyPlan.deleteMany({ userId: req.user.userId });

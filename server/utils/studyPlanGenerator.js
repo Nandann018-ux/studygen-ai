@@ -1,11 +1,19 @@
+const { predictStudyHours } = require('../services/mlService');
+
 /**
- * Generates a rule-based study plan distributed across multiple days.
- * @param {Array} subjects - List of subjects to study.
- * @param {number} totalDailyHours - Total study hours available per day (default 4).
- * @param {number} daysToPlan - How many days to span in the generated plan.
- * @returns {Array} List of study plan sessions.
+ * Generates an ML-driven study plan distributed across multiple days.
+ * 
+ * Why ML is used here:
+ * Instead of rigid arbitrary mathematical weights, an ML model (RandomForest) trained on 
+ * historical data gives a more natural prediction of effort based on syllabus completion
+ * and exam proximity.
+ * 
+ * Features used: 
+ * - difficulty (1-5)
+ * - syllabusRemaining (perc 0-100)
+ * - daysLeft (integer > 0)
  */
-function generateStudyPlan(subjects, totalDailyHours = 4, daysToPlan = 7) {
+async function generateStudyPlan(subjects, daysToPlan = 7) {
   const plan = [];
 
   const startOfDay = new Date();
@@ -15,50 +23,47 @@ function generateStudyPlan(subjects, totalDailyHours = 4, daysToPlan = 7) {
     const currentDate = new Date(startOfDay);
     currentDate.setDate(startOfDay.getDate() + dayOffset);
 
-    // Calculate priority and adjust based on days left for the CURRENT loop day
-    let totalPriority = 0;
+    // Filter subjects eligible for study on this day
+    const validSubjects = subjects.filter((sub) => {
+      const examDate = new Date(sub.examDate);
+      const daysLeftFromCurrent = Math.ceil(
+        (examDate.getTime() - currentDate.getTime()) / (1000 * 60 * 60 * 24)
+      );
+      return daysLeftFromCurrent >= 0; 
+    });
 
-    const dailySubjects = subjects
-      .map((sub) => {
-        let priority = sub.difficulty * 2 + sub.syllabusRemaining - sub.proficiency * 2;
-        priority = Math.max(1, priority);
+    if (validSubjects.length === 0) continue;
 
+    // Fetch predictions for all valid subjects simultaneously for the current date
+    const predictions = await Promise.all(
+      validSubjects.map(async (sub) => {
         const examDate = new Date(sub.examDate);
         const daysLeftFromCurrent = Math.ceil(
           (examDate.getTime() - currentDate.getTime()) / (1000 * 60 * 60 * 24)
         );
+        
+        // Ensure days input is realistic for prediction
+        const effectiveDaysLeft = Math.max(1, daysLeftFromCurrent);
 
-        // Skip past exams
-        if (daysLeftFromCurrent < 0) return null;
+        // Call ML Service Endpoint
+        let allocatedHours = await predictStudyHours({
+          difficulty: sub.difficulty,
+          syllabusRemaining: sub.syllabusRemaining,
+          daysLeft: effectiveDaysLeft
+        });
 
-        const effectiveDaysLeft = Math.max(0.5, daysLeftFromCurrent);
-        const adjustedPriority = priority / effectiveDaysLeft;
+        // Ensure minimum 0.5 hours
+        allocatedHours = Math.max(0.5, allocatedHours);
 
-        totalPriority += adjustedPriority;
-
-        return { subjectName: sub.subjectName, adjustedPriority };
-      })
-      .filter(Boolean);
-
-    if (totalPriority === 0) continue;
-
-    dailySubjects.forEach((stats) => {
-      const ratio = stats.adjustedPriority / totalPriority;
-      let allocatedHours = Math.round(ratio * totalDailyHours * 10) / 10;
-
-      // Ensure minimum 0.5 hours per subject study session
-      if (allocatedHours > 0 && allocatedHours < 0.5) {
-        allocatedHours = 0.5;
-      }
-
-      if (allocatedHours >= 0.5) {
-        plan.push({
-          subjectName: stats.subjectName,
+        return {
+          subjectName: sub.subjectName,
           allocatedHours,
           date: currentDate.toISOString().split('T')[0],
-        });
-      }
-    });
+        };
+      })
+    );
+
+    plan.push(...predictions);
   }
 
   // Sort by date ascending, then by allocated hours descending per day
