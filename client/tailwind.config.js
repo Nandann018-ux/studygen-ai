@@ -1,5 +1,6 @@
 /** @type {import('tailwindcss').Config} */
 export default {
+  darkMode: 'class',
   content: [
     "./index.html",
     "./src/**/*.{js,ts,jsx,tsx}",
@@ -8,18 +9,21 @@ export default {
     extend: {
       colors: {
         primary: {
-          DEFAULT: '#513ed9',
-          light: '#7261e0',
-          dark: '#3d2ea5'
+          DEFAULT: 'rgb(var(--color-primary-default) / <alpha-value>)',
+          dark: 'rgb(var(--color-primary-dark) / <alpha-value>)',
+          light: 'rgb(var(--color-primary-light) / <alpha-value>)'
         },
         surface: {
-          DEFAULT: '#ffffff',
-          bg: '#f4f5f8',
-          accent: '#faebf2' // pinkish AI insight bg
+          DEFAULT: 'rgb(var(--color-surface-default) / <alpha-value>)',
+          bg: 'rgb(var(--color-surface-bg) / <alpha-value>)',
+          sidebar: 'rgb(var(--color-surface-sidebar) / <alpha-value>)',
+          hover: 'rgb(var(--color-surface-hover) / <alpha-value>)',
+          border: 'rgb(var(--color-surface-border) / <alpha-value>)'
         },
         text: {
-          main: '#1a1d2d',
-          muted: '#808298'
+          main: 'rgb(var(--color-text-main) / <alpha-value>)',
+          muted: 'rgb(var(--color-text-muted) / <alpha-value>)',
+          dark: 'rgb(var(--color-text-dark) / <alpha-value>)'
         }
       },
       fontFamily: {
