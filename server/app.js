@@ -10,7 +10,7 @@ app.use(express.json());
 app.use('/api/health', healthRoutes);
 app.use('/api/auth', authRoutes);
 app.use('/api/subjects', subjectRoutes);
-app.use('/api/plan', planRoutes);
+app.use('/api/plans', planRoutes);
 app.use((req, res) => {
   res.status(404).json({ message: 'Not Found' });
 });

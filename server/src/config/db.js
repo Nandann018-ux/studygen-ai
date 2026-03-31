@@ -1,6 +1,6 @@
 const mongoose = require('mongoose');
 function encodeMongoPassword(uri) {
-  const protocolEnd = uri.indexOf(':
+  const protocolEnd = uri.indexOf(':');
   if (protocolEnd === -1) return uri;
   const afterProtocol = uri.slice(protocolEnd + 3); 
   const firstSlash = afterProtocol.indexOf('/');
