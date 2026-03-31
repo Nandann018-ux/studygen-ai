@@ -1,0 +1,14 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    @apply bg-surface-bg text-text-main font-sans antialiased;
+  }
+}
+
+/* Custom chart grid lines to match clean UI */
+canvas {
+  max-width: 100% !important;
+}
