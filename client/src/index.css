@@ -3,8 +3,40 @@
 @tailwind utilities;
 
 @layer base {
+  :root {
+    --color-primary-default: 0 208 132;
+    --color-primary-dark: 8 128 85;
+    --color-primary-light: 36 235 154;
+    
+    --color-surface-default: 255 255 255;
+    --color-surface-bg: 244 245 248;
+    --color-surface-sidebar: 249 250 251;
+    --color-surface-hover: 232 233 239;
+    --color-surface-border: 226 228 233;
+    
+    --color-text-main: 26 29 45;
+    --color-text-muted: 91 97 124;
+    --color-text-dark: 26 29 45;
+  }
+
+  .dark {
+    --color-primary-default: 0 208 132;
+    --color-primary-dark: 8 128 85;
+    --color-primary-light: 36 235 154;
+    
+    --color-surface-default: 21 23 30;
+    --color-surface-bg: 10 11 16;
+    --color-surface-sidebar: 17 18 24;
+    --color-surface-hover: 27 29 39;
+    --color-surface-border: 35 37 50;
+    
+    --color-text-main: 255 255 255;
+    --color-text-muted: 142 146 164;
+    --color-text-dark: 26 29 45;
+  }
+
   body {
-    @apply bg-surface-bg text-text-main font-sans antialiased;
+    @apply bg-surface-bg text-text-main font-sans antialiased selection:bg-primary/30 selection:text-primary transition-colors duration-300;
   }
 }
 
