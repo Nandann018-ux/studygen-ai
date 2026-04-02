@@ -20,14 +20,9 @@ async function saveSession(req, res) {
     });
 
     // --- Automatic ML Retraining Trigger ---
-    // Check total session count; trigger retraining every 50 sessions
-    const totalSessions = await StudySession.countDocuments();
-    if (totalSessions > 0 && totalSessions % 50 === 0) {
-      console.log(`Threshold reached (${totalSessions} sessions). Triggering auto-retrain...`);
-      runRetrainPipeline().catch(err => {
-        console.error('Background Auto-Retrain Failed:', err.message);
-      });
-    }
+    // Offload safety checks and background execution to the service
+    const { triggerAutoRetrain } = require('../services/mlService');
+    triggerAutoRetrain();
 
     return res.status(201).json(newSession);
   } catch (err) {
