@@ -10,4 +10,11 @@ const { protect } = require('../middleware/auth.middleware');
  */
 router.post('/retrain', protect, mlController.retrainModel);
 
+/**
+ * @route   GET /api/ml/insights
+ * @desc    Fetch AI user insights and trends
+ * @access  Private
+ */
+router.get('/insights', protect, mlController.getInsights);
+
 module.exports = router;

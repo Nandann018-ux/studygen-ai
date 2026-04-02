@@ -21,17 +21,19 @@ async function generateStudyPlan(subjects, daysToPlan = 7) {
           (examDate.getTime() - currentDate.getTime()) / (1000 * 60 * 60 * 24)
         );
         const effectiveDaysLeft = Math.max(1, daysLeftFromCurrent);
-        let allocatedHours = await predictStudyHours({
+        const { predictedHours, reasons } = await predictStudyHours({
           userId: sub.userId,
           subjectId: sub._id,
           difficulty: sub.difficulty,
           syllabusRemaining: sub.syllabusRemaining,
           daysLeft: effectiveDaysLeft
         });
-        allocatedHours = Math.max(0.5, allocatedHours);
+        const allocatedHours = Math.max(0.5, predictedHours);
         return {
+          subjectId: sub._id,
           subjectName: sub.subjectName,
           allocatedHours,
+          reasons,
           date: currentDate.toISOString().split('T')[0],
         };
       })
