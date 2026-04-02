@@ -5,8 +5,11 @@ const subjectSchema = new mongoose.Schema(
     subjectName: { type: String, required: true },
     difficulty: { type: Number, min: 1, max: 5 },
     proficiency: { type: Number, min: 1, max: 5 },
-    syllabusRemaining: { type: Number },
+    syllabusRemaining: { type: Number, default: 0 },
     examDate: { type: Date },
+    previousScore: { type: Number, default: 0 },
+    hoursPerDay: { type: Number, default: 2 },
+    revisionRequired: { type: Boolean, default: false },
   },
   { timestamps: true }
 );
