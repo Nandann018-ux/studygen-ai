@@ -1,28 +1,45 @@
+const { exec } = require('child_process');
+const path = require('path');
+
 /**
- * Deterministic heuristic predicting study hours based on cognitive variables.
- * Mimics previously implemented RandomForest behavior to maintain "AI-Powered" intent.
+ * ML predictor for study hours based on cognitive variables.
+ * Uses a Python script to run inference on the RandomForestRegressor model.
  */
-async function predictStudyHours({ difficulty, syllabusRemaining, daysLeft }) {
-  try {
-    // 1. Complexity Weight: Higher base effort for complex subjects (1.0 - 3.0h)
-    const complexityWeight = (difficulty / 5) * 2.0 + 1.0;
+function predictStudyHours({ difficulty, syllabusRemaining, daysLeft }) {
+  return new Promise((resolve, reject) => {
+    try {
+      // Input validation handling for edge cases
+      const safeDifficulty = Math.max(1, Math.min(5, difficulty)) || 3;
+      const safeSyllabus = Math.max(0, syllabusRemaining) || 0;
+      const safeDays = Math.max(1, daysLeft) || 1;
 
-    // 2. Load Weight: Remaining syllabus adds linear burden (0.0 - 2.5h)
-    const loadWeight = (syllabusRemaining / 100) * 2.5;
-
-    // 3. Urgency Multipier: Fewer days left adds exponential stress (0.5x - 2.5x)
-    // Formula: 1 + (1 / sqrt(daysLeft + 1)) which boosts intensity as deadline nears
-    const urgencyMultiplier = 1 + (2 / (Math.sqrt(daysLeft + 1)));
-
-    let predictedHours = (complexityWeight + loadWeight) * (urgencyMultiplier / 2);
-
-    // Keep it realistic: Min 0.5h, Max 6h per dedicated session
-    return Math.min(6, Math.max(0.5, parseFloat(predictedHours.toFixed(1))));
-  } catch (err) {
-    console.error('Core Logic Execution Error:', err.message);
-    return 1.5; // Robust fallback
-  }
+      const scriptPath = path.join(__dirname, '..', '..', 'ml-service', 'predict.py');
+      
+      exec(`python3 ${scriptPath} ${safeDifficulty} ${safeSyllabus} ${safeDays}`, (error, stdout, stderr) => {
+        if (error) {
+          console.error('Python Script Error:', error.message);
+          return resolve(1.5); // Robust fallback
+        }
+        
+        try {
+          const result = JSON.parse(stdout.trim());
+          if (result.error) {
+            console.error('Core Logic Execution Error:', result.error);
+            return resolve(1.5); // Fallback
+          }
+          
+          let predictedHours = result.predicted_hours;
+          return resolve(Math.min(6, Math.max(0.5, parseFloat(predictedHours.toFixed(1)))));
+        } catch (parseErr) {
+          console.error('Error parsing Python output:', parseErr, stdout);
+          return resolve(1.5);
+        }
+      });
+    } catch (err) {
+      console.error('Execution Error:', err.message);
+      return resolve(1.5); // Robust fallback
+    }
+  });
 }
 
 module.exports = { predictStudyHours };
-
