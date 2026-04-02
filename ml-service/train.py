@@ -18,40 +18,49 @@ df = pd.read_csv(CSV_PATH)
 
 # Check for real vs synthetic data
 if 'is_real_data' not in df.columns:
-    df['is_real_data'] = 0 # Default to synthetic if flag missing
+    df['is_real_data'] = 0 
 
-real_count = len(df[df['is_real_data'] == 1])
-syn_count = len(df[df['is_real_data'] == 0])
-print(f"Data Distribution: {real_count} Real, {syn_count} Synthetic")
+real_data = df[df['is_real_data'] == 1]
+syn_data = df[df['is_real_data'] == 0]
 
-# 2. Feature Engineering
-# Add urgency = syllabusRemaining / daysLeft (clip daysLeft to 1 to avoid /0)
-df['urgency'] = df['syllabusRemaining'] / df['daysLeft'].clip(lower=1)
+print(f"--- Data Distribution ---")
+print(f"Real Sessions: {len(real_data)}")
+print(f"Synthetic Samples: {len(syn_data)}")
+print(f"-------------------------")
 
-# 3. Data Enhancement (Controlled Noise - ONLY for synthetic data)
+# 2. Strategy: Prioritize real data
+if len(real_data) >= 500:
+    print("Strategy: Relying primarily on real user data (>500 samples).")
+    train_df = real_data
+else:
+    print("Strategy: Using combined dataset (synthetic + real) for robustness.")
+    train_df = df
+
+# 3. Feature Engineering
+# Features: 'difficulty', 'syllabusRemaining', 'daysLeft', 'urgency', 'consistencyScore', 'pastAvgHours'
+train_df['urgency'] = train_df['syllabusRemaining'] / train_df['daysLeft'].clip(lower=1)
+
+# Ensure new features exist
+for col in ['consistencyScore', 'pastAvgHours']:
+    if col not in train_df.columns:
+        train_df[col] = 1.0 if col == 'consistencyScore' else 2.0
+
+# 4. Data Enhancement (Only for synthetic data in combined mode)
 np.random.seed(42)
+synthetic_mask = train_df['is_real_data'] == 0
 
-# Mask for synthetic data
-synthetic_mask = df['is_real_data'] == 0
+# Apply noise to synthetic actualHours
+noise = np.random.uniform(-0.1, 0.1, size=len(train_df))
+train_df.loc[synthetic_mask, 'actualHours'] = train_df.loc[synthetic_mask, 'actualHours'] * (1 + noise[synthetic_mask])
+train_df['actualHours'] = train_df['actualHours'].clip(lower=0.1)
 
-# Apply noise to actualHours for synthetic only
-noise_hours = np.random.uniform(-0.1, 0.1, size=len(df))
-df.loc[synthetic_mask, 'actualHours'] = df.loc[synthetic_mask, 'actualHours'] * (1 + noise_hours[synthetic_mask])
-df['actualHours'] = df['actualHours'].clip(lower=0.1)
+# 5. Model Training
+features = ['difficulty', 'syllabusRemaining', 'daysLeft', 'urgency', 'consistencyScore', 'pastAvgHours']
+X = train_df[features]
+y = train_df['actualHours']
 
-# Apply noise to completion for synthetic only (if completion exists)
-if 'completion' in df.columns:
-    noise_comp = np.random.uniform(-5, 5, size=len(df))
-    df.loc[synthetic_mask, 'completion'] = df.loc[synthetic_mask, 'completion'] + noise_comp[synthetic_mask]
-    df['completion'] = df['completion'].clip(lower=60, upper=100)
-
-# 4. Model Training
-X = df[['difficulty', 'syllabusRemaining', 'daysLeft', 'urgency']]
-y = df['actualHours']
-
-# If dataset is too small, skip retraining (Safety Check)
-if len(df) < 10:
-    print("Dataset too small (<10). Skipping retraining.")
+if len(train_df) < 10:
+    print("Dataset too small. Skipping retraining.")
     exit(0)
 
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
@@ -62,9 +71,9 @@ model.fit(X_train, y_train)
 # Evaluation
 train_score = model.score(X_train, y_train)
 test_score = model.score(X_test, y_test)
-print(f"Training Score: {train_score:.4f}")
-print(f"Test Score: {test_score:.4f}")
+print(f"Training R2 Score: {train_score:.4f}")
+print(f"Test R2 Score: {test_score:.4f}")
 
-# 5. Save Model
+# 6. Save Model
 joblib.dump(model, 'ml-service/model/study_model.pkl')
-print("Model updated successfully as ml-service/model/study_model.pkl")
+print("Model updated successfully.")

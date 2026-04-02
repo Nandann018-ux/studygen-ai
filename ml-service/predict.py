@@ -9,6 +9,8 @@ try:
     difficulty = float(sys.argv[1])
     syllabusRemaining = float(sys.argv[2])
     daysLeft = float(sys.argv[3])
+    consistencyScore = float(sys.argv[4]) if len(sys.argv) > 4 else 1.0
+    pastAvgHours = float(sys.argv[5]) if len(sys.argv) > 5 else 2.0
 
     # 2. Compute urgency feature (same as training)
     urgency = syllabusRemaining / daysLeft if daysLeft > 0 else syllabusRemaining
@@ -21,12 +23,14 @@ try:
     model = joblib.load(model_path)
 
     # 4. Prepare input dataframe
-    # Features need to match training: 'difficulty', 'syllabusRemaining', 'daysLeft', 'urgency'
+    # Features MUST match training: ['difficulty', 'syllabusRemaining', 'daysLeft', 'urgency', 'consistencyScore', 'pastAvgHours']
     df = pd.DataFrame([{
         'difficulty': difficulty,
         'syllabusRemaining': syllabusRemaining,
         'daysLeft': daysLeft,
-        'urgency': urgency
+        'urgency': urgency,
+        'consistencyScore': consistencyScore,
+        'pastAvgHours': pastAvgHours
     }])
 
     # 5. Predict
@@ -39,6 +43,5 @@ try:
     print(json.dumps({"predictedHours": prediction}))
 
 except Exception as e:
-    # Any internal errors will be caught and returned as JSON for safe parsing
     print(json.dumps({"error": str(e)}))
     sys.exit(1)
