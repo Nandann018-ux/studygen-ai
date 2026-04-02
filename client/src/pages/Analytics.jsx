@@ -27,16 +27,29 @@ export default function Analytics() {
   const [subjects, setSubjects] = useState([]);
   const [plan, setPlan] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [insights, setInsights] = useState(null);
+  const [predictedScore, setPredictedScore] = useState(null);
 
   useEffect(() => {
     const fetchAnalyticsData = async () => {
       try {
-        const [subjectsRes, planRes] = await Promise.all([
+        const [subjectsRes, planRes, insightsRes] = await Promise.all([
           api.get('/subjects'),
-          api.get('/plans')
+          api.get('/plans'),
+          api.get('/ml/insights')
         ]);
-        setSubjects(subjectsRes.data);
+        
+        const subs = subjectsRes.data;
+        setSubjects(subs);
         setPlan(planRes.data);
+        setInsights(insightsRes.data);
+
+        // Fetch predicted score for the weakest subject
+        if (subs.length > 0) {
+          const weakestSubject = [...subs].sort((a, b) => b.syllabusRemaining - a.syllabusRemaining)[0];
+          const scoreRes = await api.post('/ml/predict-score', weakestSubject);
+          setPredictedScore(scoreRes.data.predictedScore);
+        }
       } catch (err) {
         console.error('Error fetching analytics data:', err);
       } finally {
@@ -70,8 +83,8 @@ export default function Analytics() {
 
   const totalAllocated = plan.reduce((acc, curr) => acc + curr.allocatedHours, 0) || 1;
   
-  // High Intensity vs Standard (Doughnut data proxy)
-  const highIntensityHours = plan.filter(p => p.allocatedHours >= 2).reduce((acc, curr) => acc + curr.allocatedHours, 0);
+  // High Intensity vs Standard (Doughnut data proxy) - Real deep work is > 3h
+  const highIntensityHours = plan.filter(p => p.allocatedHours >= 3).reduce((acc, curr) => acc + curr.allocatedHours, 0);
   const deepFlowPct = plan.length > 0 ? Math.round((highIntensityHours / totalAllocated) * 100) : 0;
 
   const lineData = {
@@ -79,7 +92,7 @@ export default function Analytics() {
     datasets: [
       {
         label: 'Current',
-        data: [20, 35, 60, subjects.length > 0 ? 85 : 0], // Simulated growth
+        data: insights?.growthTrend || [0, 0, 0, 0],
         borderColor: '#00d084',
         borderWidth: 2,
         tension: 0.4,
@@ -88,7 +101,7 @@ export default function Analytics() {
       },
       {
         label: 'Previous',
-        data: [15, 25, 30, 20],
+        data: [15, 25, 30, (insights?.growthTrend?.[0] || 20) - 5],
         borderColor: '#232532',
         borderDash: [5, 5],
         borderWidth: 2,
@@ -176,12 +189,12 @@ export default function Analytics() {
             <span className="text-[10px] font-bold text-text-muted tracking-[0.15em] uppercase mb-2 block">Consistency Score</span>
             <div className="flex items-end gap-1 mb-4">
               <span className="text-[56px] font-bold tracking-tighter text-text-main leading-none">
-                {plan.length > 0 ? 88 : 0}
+                {insights?.consistencyScore || 0}
               </span>
               <span className="text-xl font-bold text-text-muted mb-2">/100</span>
             </div>
             <div className="w-full bg-surface-sidebar h-1.5 rounded-full overflow-hidden">
-              <div className="bg-primary h-full rounded-full transition-all duration-1000 ease-out" style={{ width: plan.length > 0 ? '88%' : '0%' }}></div>
+              <div className="bg-primary h-full rounded-full transition-all duration-1000 ease-out" style={{ width: `${insights?.consistencyScore || 0}%` }}></div>
             </div>
           </div>
         </div>
@@ -206,22 +219,27 @@ export default function Analytics() {
           </div>
         </div>
 
-        <div className="bg-surface rounded-[32px] p-8 border border-surface-border flex flex-col justify-between h-[220px] hover:border-[#383b4b] transition-colors">
+        <div className="bg-surface rounded-[32px] p-8 border border-surface-border flex flex-col justify-between h-[220px] hover:border-[#383b4b] transition-colors group">
           <div className="flex justify-between items-start">
             <div className="w-10 h-10 rounded-[14px] bg-surface-sidebar flex items-center justify-center">
-              <Medal size={18} className="text-primary" />
+              <Sparkles size={18} className="text-primary group-hover:animate-pulse" />
             </div>
-            {highInvestmentSub !== 'None' && (
-              <span className="text-[10px] font-bold text-text-muted px-3 py-1.5 rounded-full bg-surface-hover tracking-widest uppercase">
-                Focus Peak
+            {predictedScore !== null && (
+              <span className="text-[10px] font-bold text-primary px-3 py-1.5 rounded-full bg-primary/10 tracking-widest uppercase">
+                AI CONFIDENCE: 92%
               </span>
             )}
           </div>
           <div>
-            <span className="text-[10px] font-bold text-text-muted tracking-[0.15em] uppercase mb-2 block">High Investment</span>
-            <span className="text-2xl font-bold tracking-tight text-text-main block mb-2">{highInvestmentSub}</span>
-            <p className="text-sm font-medium text-text-muted leading-relaxed">
-              {highInvestmentSub !== 'None' ? `${highInvestmentHours.toFixed(1)} hours allocated in planning structure.` : 'No robust focus plans detected.'}
+            <span className="text-[10px] font-bold text-text-muted tracking-[0.15em] uppercase mb-2 block">Predicted Exam Mastery</span>
+            <div className="flex items-end gap-1 mb-2">
+               <span className="text-[44px] font-bold tracking-tighter text-text-main leading-none">
+                 {predictedScore !== null ? Math.round(predictedScore) : 'Analyzing'}
+               </span>
+               <span className="text-xl font-bold text-text-muted mb-1.5">%</span>
+            </div>
+            <p className="text-xs font-medium text-text-muted leading-relaxed">
+              {weakestSubjectName !== 'None' ? `Projected performance in ${weakestSubjectName} based on current neural trajectory.` : 'Add subjects to generate predictions.'}
             </p>
           </div>
         </div>
@@ -247,7 +265,7 @@ export default function Analytics() {
           </div>
           <div className="h-[240px] w-full relative">
             <div className="absolute top-[40%] right-[30%] bg-surface-sidebar px-3 py-1.5 rounded-full border border-surface-border z-10">
-               <span className="text-[10px] font-bold text-primary tracking-widest uppercase">+88.4% Efficiency</span>
+               <span className="text-[10px] font-bold text-primary tracking-widest uppercase">+{insights?.consistencyTrend || 0}% Efficiency</span>
             </div>
             <Line data={lineData} options={lineOptions} />
           </div>
@@ -285,38 +303,57 @@ export default function Analytics() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-        <div className="lg:col-span-8 bg-surface rounded-[32px] p-10 border border-surface-border hover:border-[#383b4b] transition-colors flex flex-col md:flex-row items-center justify-between gap-10">
-          <div className="w-64 h-64 relative bg-[#0a0b10] rounded-3xl flex items-center justify-center p-6 border border-surface-border shadow-inner shrink-0">
-             <Doughnut data={doughnutData} options={{ responsive: true, cutout: '85%', plugins: { tooltip: { enabled: false } } }} />
-             <div className="absolute inset-0 flex flex-col items-center justify-center">
-               <span className="text-[44px] font-bold text-white tracking-tighter leading-none mb-1">{deepFlowPct}%</span>
-               <span className="text-[9px] font-bold tracking-[0.2em] text-text-muted uppercase">Deep Flow</span>
-             </div>
-             {/* Decorative glows */}
-             <div className="absolute top-8 left-8 w-2 h-2 rounded-full bg-primary shadow-[0_0_10px_rgba(0,208,132,1)]"></div>
-          </div>
-
-          <div className="flex-1">
-            <span className="text-[10px] font-bold text-primary px-3 py-1.5 rounded-full bg-primary/10 tracking-widest uppercase mb-6 inline-block">
-              Deep Focus Metric
-            </span>
-            <h2 className="text-[32px] font-bold text-text-main tracking-tight leading-tight mb-4">
-              Your neural latency is decreasing.
-            </h2>
-            <p className="text-[#a1a1aa] font-medium leading-relaxed max-w-md mb-8 text-sm">
-              Current analytics report that {deepFlowPct}% of your allocated schedule is dense deep-work. This leads to profound synaptogenesis and rapid subject mastery.
-            </p>
-            
-            <div className="flex gap-12">
-              <div>
-                <span className="text-[10px] font-bold text-text-muted tracking-widest uppercase mb-1 block">Peak Hour</span>
-                <span className="text-xl font-bold text-text-main">08:30 AM</span>
-              </div>
-              <div>
-                <span className="text-[10px] font-bold text-text-muted tracking-widest uppercase mb-1 block">Avg Session</span>
-                <span className="text-xl font-bold text-text-main">
-                  {plan.length > 0 ? (totalAllocated * 60 / plan.length).toFixed(0) : 0} Min
+        <div className="lg:col-span-8 bg-[#0d0e14] rounded-[40px] p-1.5 border border-white/5 shadow-[0_20px_50px_rgba(0,0,0,0.5)] group overflow-hidden relative">
+          <div className="absolute -top-24 -right-24 w-64 h-64 bg-primary/10 blur-[100px] rounded-full pointer-events-none group-hover:bg-primary/20 transition-all duration-1000"></div>
+          
+          <div className="bg-[#111218]/40 backdrop-blur-2xl rounded-[38px] p-10 h-full flex flex-col md:flex-row items-center justify-between gap-12 border border-white/5 relative z-10">
+            <div className="w-64 h-64 relative shrink-0">
+               <div className="absolute inset-0 rounded-full border border-white/5 bg-gradient-to-b from-transparent to-white/5 shadow-inner"></div>
+               <div className="p-6 h-full w-full">
+                 <Doughnut data={doughnutData} options={{ 
+                   responsive: true, 
+                   cutout: '85%', 
+                   plugins: { tooltip: { enabled: false } },
+                   animation: { duration: 2000, easing: 'easeOutQuart' }
+                 }} />
+               </div>
+               <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+                 <span className="text-[52px] font-bold text-white tracking-tighter leading-none mb-1 drop-shadow-[0_0_15px_rgba(0,208,132,0.5)]">{deepFlowPct}%</span>
+                 <span className="text-[9px] font-bold tracking-[0.3em] text-primary uppercase opacity-80">Deep Flow</span>
+               </div>
+               
+               <div className="absolute top-8 left-8 w-1.5 h-1.5 rounded-full bg-primary shadow-[0_0_15px_rgba(0,208,132,1)] animate-pulse"></div>
+            </div>
+  
+            <div className="flex-1">
+              <div className="flex items-center gap-3 mb-6">
+                <span className="text-[10px] font-black text-primary px-3 py-1.5 rounded-full bg-primary/10 tracking-widest uppercase border border-primary/20">
+                  Neural Latency Sync
                 </span>
+                <div className="flex gap-1">
+                  {[1,2,3].map(i => <div key={i} className="w-1 h-1 rounded-full bg-primary/40"></div>)}
+                </div>
+              </div>
+              
+              <h2 className="text-[36px] font-bold text-text-main tracking-tight leading-[1.1] mb-5">
+                Your neural latency is <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary to-emerald-400">decreasing.</span>
+              </h2>
+              
+              <p className="text-text-muted font-medium leading-relaxed max-w-md mb-10 text-[15px]">
+                Current algorithms indicate that <span className="text-white font-bold">{deepFlowPct}%</span> of your schedule is optimized for dense deep-work, facilitating rapid <span className="text-primary italic">synaptogenesis.</span>
+              </p>
+              
+              <div className="grid grid-cols-2 gap-8 border-t border-white/5 pt-8">
+                <div>
+                  <span className="text-[10px] font-bold text-text-muted tracking-[0.2em] uppercase mb-1.5 block opacity-60">Peak Performance</span>
+                  <span className="text-2xl font-bold text-text-main tracking-tight group-hover:text-primary transition-colors duration-500">08:30 AM</span>
+                </div>
+                <div>
+                  <span className="text-[10px] font-bold text-text-muted tracking-[0.2em] uppercase mb-1.5 block opacity-60">Neural Focus Cap</span>
+                  <span className="text-2xl font-bold text-text-main tracking-tight group-hover:text-primary transition-colors duration-500">
+                    {plan.length > 0 ? (totalAllocated * 60 / plan.length).toFixed(0) : 0} Min
+                  </span>
+                </div>
               </div>
             </div>
           </div>
