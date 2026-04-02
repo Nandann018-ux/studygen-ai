@@ -1,43 +1,99 @@
-const { exec } = require('child_process');
+const { spawn } = require('child_process');
 const path = require('path');
 
 /**
+ * Heuristic fallback predictor (deterministic rule-based logic).
+ * Used when the ML service is unavailable or fails.
+ */
+function fallbackPredictor({ difficulty, syllabusRemaining, daysLeft }) {
+  try {
+    const complexityWeight = (difficulty / 5) * 2.0 + 1.0;
+    const loadWeight = (syllabusRemaining / 100) * 2.5;
+    const urgencyMultiplier = 1 + (2 / (Math.sqrt(daysLeft + 1)));
+    
+    let predictedHours = (complexityWeight + loadWeight) * (urgencyMultiplier / 2);
+    return Math.min(6, Math.max(0.5, parseFloat(predictedHours.toFixed(1))));
+  } catch (err) {
+    return 1.5; // Final absolute fallback
+  }
+}
+
+/**
  * ML predictor for study hours based on cognitive variables.
- * Uses a Python script to run inference on the RandomForestRegressor model.
+ * Uses child_process.spawn to run python-based RandomForest inference.
  */
 function predictStudyHours({ difficulty, syllabusRemaining, daysLeft }) {
-  return new Promise((resolve, reject) => {
-    try {
-      // Input validation handling for edge cases
-      const safeDifficulty = Math.max(1, Math.min(5, difficulty)) || 3;
-      const safeSyllabus = Math.max(0, syllabusRemaining) || 0;
-      const safeDays = Math.max(1, daysLeft) || 1;
+  return new Promise((resolve) => {
+    // 1. Sanitize Inputs
+    const safeDifficulty = Number(difficulty) || 3;
+    const safeSyllabus = Number(syllabusRemaining) || 0;
+    const safeDays = Number(daysLeft) || 1;
 
+    // 2. Prepare Fallback
+    const fallback = () => resolve(fallbackPredictor({
+      difficulty: safeDifficulty,
+      syllabusRemaining: safeSyllabus,
+      daysLeft: safeDays
+    }));
+
+    try {
       const scriptPath = path.join(__dirname, '..', '..', 'ml-service', 'predict.py');
       
-      exec(`python3 ${scriptPath} ${safeDifficulty} ${safeSyllabus} ${safeDays}`, (error, stdout, stderr) => {
-        if (error) {
-          console.error('Python Script Error:', error.message);
-          return resolve(1.5); // Robust fallback
+      // 3. Spawn Python process
+      const pythonProcess = spawn('python3', [
+        scriptPath,
+        safeDifficulty.toString(),
+        safeSyllabus.toString(),
+        safeDays.toString()
+      ]);
+
+      let stdoutData = '';
+      let stderrData = '';
+
+      pythonProcess.stdout.on('data', (data) => {
+        stdoutData += data.toString();
+      });
+
+      pythonProcess.stderr.on('data', (data) => {
+        stderrData += data.toString();
+      });
+
+      pythonProcess.on('close', (code) => {
+        if (code !== 0) {
+          console.warn(`ML service exited with code ${code}. Stderr: ${stderrData}`);
+          return fallback();
         }
-        
+
         try {
-          const result = JSON.parse(stdout.trim());
-          if (result.error) {
-            console.error('Core Logic Execution Error:', result.error);
-            return resolve(1.5); // Fallback
-          }
+          const result = JSON.parse(stdoutData.trim());
           
-          let predictedHours = result.predicted_hours;
-          return resolve(Math.min(6, Math.max(0.5, parseFloat(predictedHours.toFixed(1)))));
+          if (result.error) {
+            console.error('ML Prediction Script Error:', result.error);
+            return fallback();
+          }
+
+          if (typeof result.predictedHours !== 'number') {
+            console.warn('ML Prediction result is not a number:', result);
+            return fallback();
+          }
+
+          // Return ML prediction (clamped for safety)
+          resolve(Math.min(20, Math.max(0.5, result.predictedHours)));
         } catch (parseErr) {
-          console.error('Error parsing Python output:', parseErr, stdout);
-          return resolve(1.5);
+          console.error('Failed to parse ML output JSON:', parseErr, 'Raw:', stdoutData);
+          fallback();
         }
       });
+
+      // Handle spawn errors (e.g. python3 not found)
+      pythonProcess.on('error', (err) => {
+        console.error('Failed to start ML child process:', err.message);
+        fallback();
+      });
+
     } catch (err) {
-      console.error('Execution Error:', err.message);
-      return resolve(1.5); // Robust fallback
+      console.error('Unexpected ML Service Error:', err.message);
+      fallback();
     }
   });
 }
