@@ -30,18 +30,35 @@ export default function Dashboard() {
   const [plan, setPlan] = useState([]);
   const [insights, setInsights] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [userName, setUserName] = useState('Focus');
 
   useEffect(() => {
+    // Get user name from storage
+    const userData = localStorage.getItem('studygen_user');
+    if (userData) {
+      try {
+        const user = JSON.parse(userData);
+        if (user.name) setUserName(user.name.split(' ')[0]); 
+      } catch (e) {}
+    }
     const fetchDashboardData = async () => {
+      console.log("Fetching dashboard insights...");
       try {
         const [subjectsRes, planRes, insightsRes] = await Promise.all([
           api.get('/subjects'),
           api.get('/plans'),
           api.get('/ml/insights')
         ]);
-        setSubjects(subjectsRes.data);
-        setPlan(planRes.data);
+
+        // Prioritize seeded data from insights to avoid race conditions
+        const finalSubjects = insightsRes.data.seededSubjects || subjectsRes.data;
+        const finalPlan = insightsRes.data.seededPlan || planRes.data;
+
+        setSubjects(finalSubjects);
+        setPlan(finalPlan);
         setInsights(insightsRes.data);
+        
+        console.log("Dashboard state synchronized with neural engine.");
       } catch (err) {
         console.error('Error fetching dashboard data:', err);
       } finally {
@@ -51,11 +68,35 @@ export default function Dashboard() {
     fetchDashboardData();
   }, []);
 
-  const totalHours = plan.reduce((acc, p) => acc + p.allocatedHours, 0).toFixed(1);
-  const upcomingDeadlines = subjects.filter(s => s.examDate).length;
+  const todayDate = new Date().toISOString().split('T')[0];
+  const todayPlan = plan.filter(task => task.date && task.date.split('T')[0] === todayDate);
+  const totalHours = todayPlan
+    .filter(p => !p.isCompleted)
+    .reduce((acc, p) => acc + Number(p.allocatedHours), 0)
+    .toFixed(1);
+
+  // Auto-generate plan if subjects exist but no plan for today
+  useEffect(() => {
+    if (!loading && subjects.length > 0 && todayPlan.length === 0) {
+      console.log("[Neural Engine] Subjects detected but no active plan. Suggesting initialization.");
+    }
+  }, [loading, subjects, todayPlan]);
+
+  const now = new Date();
+  const fourteenDaysFromNow = new Date(now.getTime() + 14 * 24 * 60 * 60 * 1000);
+  const threeDaysFromNow = new Date(now.getTime() + 3 * 24 * 60 * 60 * 1000);
   
-  const weakestSubject = insights?.weakest || 'Analyzing...';
-  const strongestSubject = insights?.strongest || 'Analyzing...';
+  const relevantSubjects = subjects.filter(s => {
+    if (!s.examDate) return false;
+    const d = new Date(s.examDate);
+    return d >= now && d <= fourteenDaysFromNow;
+  });
+  
+  const upcomingDeadlinesCount = relevantSubjects.length;
+  const hasUrgentDeadline = relevantSubjects.some(s => new Date(s.examDate) <= threeDaysFromNow);
+  
+  const weakestSubject = loading ? 'Analyzing...' : (insights?.weakest || 'N/A');
+  const strongestSubject = loading ? 'Analyzing...' : (insights?.strongest || 'N/A');
 
   const formatTime = (timeInHours) => {
     const h = Math.floor(timeInHours);
@@ -115,22 +156,26 @@ export default function Dashboard() {
 
   let currentStartHour = 8;
 
+  const hasChartData = insights?.chartData && insights.chartData.length > 0;
+
   return (
     <div className="max-w-7xl mx-auto pb-12 animate-in fade-in duration-700">
       <div className="mb-10 mt-4 flex justify-between items-end">
         <div>
           <h1 className="text-[44px] font-bold tracking-tight text-text-main mb-3 leading-tight">
-            Welcome back, <span className="text-primary tracking-tight">Focus</span>
+            Welcome back, <span className="text-primary tracking-tight">{userName}</span>
           </h1>
           <p className="text-text-muted text-[15px] font-medium max-w-2xl">
-            {insights?.improvement || 'Analyzing your recent cognitive patterns...'}
+            {loading ? 'Analyzing your recent cognitive patterns...' : (insights?.improvement || 'Neural engine initialized.')}
             <span className="text-primary ml-2">Keep up the momentum.</span>
           </p>
         </div>
-        {!loading && insights && (
-          <div className="flex items-center gap-2 bg-primary/10 border border-primary/20 px-4 py-2 rounded-2xl animate-pulse">
+        {!loading && (insights?.recentConsistency > 0 || insights?.consistencyTrend !== '0.0') && (
+          <div className="flex items-center gap-2 bg-primary/10 border border-primary/20 px-4 py-2 rounded-2xl animate-in zoom-in-95 duration-500">
             <TrendingUp size={16} className="text-primary" />
-            <span className="text-xs font-bold text-primary uppercase tracking-widest">{insights.recentConsistency}% CONSISTENCY</span>
+            <span className="text-xs font-bold text-primary uppercase tracking-widest">
+                {insights?.recentConsistency || 100}% FOCUS SYNC
+            </span>
           </div>
         )}
       </div>
@@ -151,18 +196,18 @@ export default function Dashboard() {
           value={loading ? '-' : `${totalHours}h`} 
         />
         <StatCard 
-          icon={<AlertTriangle size={18} className="text-[#ff4e4e]" />} 
-          badge={upcomingDeadlines > 0 ? "Tracking" : "Clear"}
-          badgeColor="text-[#ff4e4e] bg-[#ff4e4e]/10"
+          icon={<AlertTriangle size={18} className={upcomingDeadlinesCount > 0 ? "text-[#ff4e4e]" : "text-primary"} />} 
+          badge={upcomingDeadlinesCount > 0 ? (hasUrgentDeadline ? "Urgent" : "Tracking") : "Clear"}
+          badgeColor={upcomingDeadlinesCount > 0 ? "text-[#ff4e4e] bg-[#ff4e4e]/10 font-black" : "text-primary bg-primary/10"}
           title="DEADLINES" 
-          value={loading ? '-' : upcomingDeadlines.toString()} 
+          value={loading ? '-' : upcomingDeadlinesCount.toString()} 
         />
         <StatCard 
-          icon={<Brain size={18} className="text-[#a1a1aa]" />} 
-          badge="Action Needed"
-          badgeColor="text-[#a1a1aa] bg-[#2a2d3a]"
+          icon={<Brain size={18} className={insights?.weakest !== 'N/A' ? "text-[#ff4e4e]" : "text-[#a1a1aa]"} />} 
+          badge={insights?.weakest !== 'N/A' ? "Action Needed" : "Gathering Data"}
+          badgeColor={insights?.weakest !== 'N/A' ? "text-[#ff4e4e] bg-[#ff4e4e]/10 font-bold" : "text-[#a1a1aa] bg-[#2a2d3a] font-bold"}
           title="WEAK SUBJECT" 
-          value={loading ? '-' : weakestSubject.substring(0, 15)} 
+          value={loading ? '-' : (weakestSubject.substring(0, 15) || 'N/A')} 
         />
       </div>
 
@@ -181,13 +226,13 @@ export default function Dashboard() {
           <div className="space-y-5 flex-1">
             {loading ? (
               <div className="text-text-muted text-sm tracking-widest uppercase">Initializing Neural Paths...</div>
-            ) : plan.length === 0 ? (
+            ) : todayPlan.length === 0 ? (
               <div className="bg-surface border border-surface-border rounded-[28px] p-10 text-center">
                 <span className="text-text-muted font-bold text-sm tracking-widest uppercase block mb-4">No active blocks</span>
                 <button onClick={() => navigate('/plan')} className="text-primary font-bold text-xs tracking-wider border border-primary/20 bg-primary/10 px-6 py-2.5 rounded-full uppercase transition-all hover:bg-primary/20 hover:scale-105 active:scale-95">Generate Now</button>
               </div>
             ) : (
-              plan.slice(0, 3).map((item, idx) => {
+              todayPlan.slice(0, 3).map((item, idx) => {
                 const start = formatTime(currentStartHour);
                 currentStartHour += item.allocatedHours;
                 const end = formatTime(currentStartHour);
@@ -224,30 +269,41 @@ export default function Dashboard() {
                          <span className="text-[10px] font-bold text-text-muted uppercase tracking-[0.2em]">Planned vs Actual</span>
                       </div>
                    </div>
-                   <div className="flex flex-col items-end">
-                      <span className="text-xs font-bold text-text-muted mb-1">Consistency Trend</span>
-                      <div className="flex items-center gap-1">
-                         {Number(insights?.consistencyTrend) >= 0 ? <TrendingUp size={14} className="text-primary" /> : <TrendingDown size={14} className="text-[#ff4e4e]" />}
-                         <span className={`text-sm font-bold ${Number(insights?.consistencyTrend) >= 0 ? 'text-primary' : 'text-[#ff4e4e]'}`}>
-                            {insights?.consistencyTrend || '0.0'}%
-                         </span>
-                      </div>
-                   </div>
+                   {!loading && (
+                    <div className="flex flex-col items-end">
+                        <span className="text-xs font-bold text-text-muted mb-1">Consistency Trend</span>
+                        <div className="flex items-center gap-1">
+                          {Number(insights?.consistencyTrend) >= 0 ? <TrendingUp size={14} className="text-primary" /> : <TrendingDown size={14} className="text-[#ff4e4e]" />}
+                          <span className={`text-sm font-bold ${Number(insights?.consistencyTrend) >= 0 ? 'text-primary' : 'text-[#ff4e4e]'}`}>
+                              {insights?.consistencyTrend || '0.0'}%
+                          </span>
+                        </div>
+                    </div>
+                   )}
                 </div>
 
-                <div className="h-24 w-full mt-4">
-                   {insights?.chartData && <Line data={chartData} options={chartOptions} />}
+                <div className="h-24 w-full mt-4 flex items-center justify-center">
+                   {loading ? (
+                      <span className="text-xs font-bold text-text-muted uppercase tracking-widest animate-pulse">Syncing neural data...</span>
+                   ) : hasChartData ? (
+                      <Line data={chartData} options={chartOptions} />
+                   ) : (
+                      <div className="text-center">
+                        <span className="text-[10px] font-bold text-text-muted uppercase tracking-widest block mb-1">No neural data yet</span>
+                        <span className="text-[9px] text-text-muted/60 uppercase tracking-tighter">Your first session will appear here</span>
+                      </div>
+                   )}
                 </div>
 
                 <div className="flex justify-between items-center mt-4 pt-4 border-t border-white/5">
                    <div className="flex gap-6">
                       <div>
                          <span className="text-[9px] font-bold text-text-muted uppercase tracking-widest block mb-0.5">Peak Performance</span>
-                         <span className="text-sm font-bold text-text-main">{strongestSubject}</span>
+                         <span className="text-sm font-bold text-text-main">{loading ? '...' : strongestSubject}</span>
                       </div>
                       <div>
                          <span className="text-[9px] font-bold text-text-muted uppercase tracking-widest block mb-0.5">Target Area</span>
-                         <span className="text-sm font-bold text-text-main">{weakestSubject}</span>
+                         <span className="text-sm font-bold text-text-main">{loading ? '...' : weakestSubject}</span>
                       </div>
                    </div>
                    <button 
@@ -261,16 +317,22 @@ export default function Dashboard() {
           </div>
 
           <div className="grid grid-cols-2 gap-6 flex-1">
-            <div className="bg-surface border border-surface-border rounded-[28px] p-6 flex flex-col items-center justify-center text-center transition-all hover:border-primary/30 group">
+            <button 
+              onClick={() => navigate('/focus')}
+              className="bg-surface border border-surface-border rounded-[28px] p-6 flex flex-col items-center justify-center text-center transition-all hover:border-primary/30 hover:bg-surface-hover group active:scale-[0.98]"
+            >
               <Timer size={24} className="text-primary mb-3 group-hover:scale-110 transition-transform" />
               <h4 className="text-text-main font-bold mb-1">Deep Work Timer</h4>
               <span className="text-[9px] text-text-muted font-bold tracking-widest uppercase">25 / 5 Cycle</span>
-            </div>
-            <div className="bg-surface border border-surface-border rounded-[28px] p-6 flex flex-col items-center justify-center text-center transition-all hover:border-primary/30 group">
+            </button>
+            <button 
+              onClick={() => navigate('/analytics')}
+              className="bg-surface border border-surface-border rounded-[28px] p-6 flex flex-col items-center justify-center text-center transition-all hover:border-primary/30 hover:bg-surface-hover group active:scale-[0.98]"
+            >
               <Brain size={24} className="text-primary mb-3 group-hover:scale-110 transition-transform" />
               <h4 className="text-text-main font-bold mb-1">Neural AI</h4>
               <span className="text-[9px] text-text-muted font-bold tracking-widest uppercase">Live Synthesis</span>
-            </div>
+            </button>
           </div>
         </div>
       </div>
