@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Play, FileText, BarChart2, Sparkles, Wand2, CheckCircle2, X, Info } from 'lucide-react';
 import api from '../services/api';
 
 export default function StudyPlan() {
+  const navigate = useNavigate();
   const [plan, setPlan] = useState([]);
   const [loading, setLoading] = useState(true);
   const [generating, setGenerating] = useState(false);
@@ -15,7 +17,19 @@ export default function StudyPlan() {
   const fetchPlan = async () => {
     try {
       const response = await api.get('/plans');
-      setPlan(response.data);
+      // For the first couple of tasks, fetch AI tips
+      const planWithTips = await Promise.all(response.data.map(async (task, i) => {
+        if (i < 3) { // Only fetch tips for the next 3 tasks to save resources
+          try {
+            const tipsRes = await api.post('/ml/tips', { subjectName: task.subjectName, difficulty: task.difficulty || 3 });
+            return { ...task, aiTips: tipsRes.data.tips };
+          } catch (e) {
+            return task;
+          }
+        }
+        return task;
+      }));
+      setPlan(planWithTips);
     } catch (err) {
       console.error('Failed to fetch plan:', err);
     } finally {
@@ -31,18 +45,32 @@ export default function StudyPlan() {
     setToast(msg);
     setTimeout(() => setToast(null), 3000);
   };
+// ... rest of logic stays similar ...
+// Moving down to JSX updates
+// Around line 170 in original file (task card)
 
   const handleRegenerate = async () => {
     setGenerating(true);
+    console.log("Starting plan regeneration...");
     try {
-      await api.post('/plans/generate');
-      await fetchPlan();
+      const response = await api.post('/plans/generate');
+      console.log("Plan generated successfully:", response.data);
+      
+      // If default subjects were seeded, we should ideally refresh the subjects context 
+      // but fetchPlan() will at least show the new sessions immediately.
+      await fetchPlan(); 
       showFeedback("Neural pathways recalibrated 🧠");
     } catch (err) {
-      console.error('Failed to generate plan:', err);
+      const errMsg = err.response?.data?.message || err.message || "Failed to generate plan";
+      console.error("Plan Generation Error:", errMsg, err);
+      showFeedback(`${errMsg}`);
     } finally {
       setGenerating(false);
     }
+  };
+
+  const handleStartFocus = (task) => {
+    navigate('/focus', { state: { subject: task } });
   };
 
   const handleMarkCompleted = (task) => {
@@ -64,8 +92,15 @@ export default function StudyPlan() {
         plannedHours: selectedTask.allocatedHours,
         actualHours: parseFloat(sessionData.actualHours),
         completion: parseInt(sessionData.completion),
-        date: new Date()
+        date: new Date(),
+        planId: selectedTask._id // Crucial for persistence
       });
+
+      // Update local state for immediate visual feedback
+      setPlan(prev => prev.map(t => 
+        t._id === selectedTask._id ? { ...t, isCompleted: true } : t
+      ));
+
       setShowModal(false);
       showFeedback("AI updated your study pattern 📈");
       // Optional: fetch insights if needed, or just let dashboard handle it
@@ -84,6 +119,9 @@ export default function StudyPlan() {
     return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
   };
 
+  const todayDate = new Date().toISOString().split('T')[0];
+  // Standardize comparison by splitting full ISO strings from the backend
+  const todayPlan = plan.filter(task => task.date && task.date.split('T')[0] === todayDate);
   let currentStartHour = 8;
 
   return (
@@ -113,12 +151,12 @@ export default function StudyPlan() {
               <div className="text-center py-20 text-text-muted font-bold tracking-widest uppercase">
                 Synchronizing Neural Roadmap...
               </div>
-            ) : plan.length === 0 ? (
+            ) : todayPlan.length === 0 ? (
               <div className="text-center py-20 text-text-muted font-bold tracking-widest uppercase bg-surface border border-surface-border rounded-[32px]">
-                No Plan Available. Generate one below!
+                No Sessions Scheduled for Today.
               </div>
             ) : (
-              plan.map((task, idx) => {
+              todayPlan.map((task, idx) => {
                 const startTimeStr = formatTime(currentStartHour);
                 const endTimeStr = formatTime(currentStartHour + task.allocatedHours);
                 currentStartHour += task.allocatedHours;
@@ -130,20 +168,26 @@ export default function StudyPlan() {
                         <div className="w-2.5 h-2.5 rounded-full bg-primary shadow-[0_0_10px_rgba(0,208,132,0.8)]"></div>
                       </div>
                     </div>
-                    <div className="bg-surface border border-surface-border rounded-[32px] p-8 w-full hover:border-[#383b4b] transition-all">
+                    <div className={`bg-surface border border-surface-border rounded-[32px] p-8 w-full transition-all ${task.isCompleted ? 'opacity-60 grayscale-[0.3]' : 'hover:border-[#383b4b]'}`}>
                       <div className="flex justify-between items-start mb-6">
                         <div>
                           <span className="text-xs font-bold tracking-widest uppercase text-primary mb-2 block">
                             {startTimeStr} — {endTimeStr}
                           </span>
-                          <h3 className="text-2xl font-bold text-text-main tracking-tight">
+                          <h3 className={`text-2xl font-bold text-text-main tracking-tight ${task.isCompleted ? 'line-through decoration-primary/50' : ''}`}>
                             {task.subjectName}
                           </h3>
                         </div>
                         <div className="flex gap-2">
-                          <span className="px-3 py-1.5 rounded-full bg-surface-hover border border-surface-border text-[9px] font-bold text-text-muted tracking-wide uppercase">
-                            {task.allocatedHours > 2 ? 'High Intensity' : 'Standard Session'}
-                          </span>
+                          {task.isCompleted ? (
+                            <span className="px-3 py-1.5 rounded-full bg-primary/20 border border-primary/50 text-[9px] font-bold text-primary tracking-wide uppercase flex items-center gap-1">
+                              <CheckCircle2 size={10} /> Neural Goal Met
+                            </span>
+                          ) : (
+                            <span className="px-3 py-1.5 rounded-full bg-surface-hover border border-surface-border text-[9px] font-bold text-text-muted tracking-wide uppercase">
+                              {task.allocatedHours > 2 ? 'High Intensity' : 'Standard Session'}
+                            </span>
+                          )}
                         </div>
                       </div>
 
@@ -161,18 +205,46 @@ export default function StudyPlan() {
                       <p className="text-text-muted leading-relaxed max-w-2xl mb-8 font-medium">
                         Allocated {task.allocatedHours.toFixed(1)} hours of focus time based on retention algorithms and your cognitive profile.
                       </p>
+
+                      {task.aiTips && task.aiTips.length > 0 && !task.isCompleted && (
+                        <div className="mb-8 p-6 bg-surface-sidebar rounded-2xl border border-primary/20 relative overflow-hidden group/tips">
+                          <div className="absolute top-0 right-0 p-4 opacity-10 group-hover/tips:opacity-20 transition-opacity">
+                            <Sparkles size={40} className="text-primary" />
+                          </div>
+                          <h4 className="text-[10px] font-bold tracking-[0.2em] text-primary uppercase mb-4 flex items-center gap-2">
+                             <TrendingUp size={12} /> Neural Strategy
+                          </h4>
+                          <ul className="space-y-3">
+                            {task.aiTips.map((tip, tIdx) => (
+                              <li key={tIdx} className="text-sm text-text-main flex gap-3 leading-relaxed">
+                                <div className="w-1.5 h-1.5 rounded-full bg-primary mt-2 flex-shrink-0 animate-pulse"></div>
+                                {tip}
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
                       
-                      <div className="flex items-center gap-6">
-                        <button className="flex items-center gap-2 text-primary font-bold text-sm tracking-wide hover:text-primary-light transition-all active:scale-95 group/btn">
-                          <Play size={16} className="fill-current group-hover/btn:scale-110 transition-transform" /> Start Focus Session
-                        </button>
-                        <button 
-                          onClick={() => handleMarkCompleted(task)}
-                          className="flex items-center gap-2 text-text-muted font-bold text-sm tracking-wide hover:text-text-main transition-all active:scale-95"
-                        >
-                          <CheckCircle2 size={16} /> Mark as Completed
-                        </button>
-                      </div>
+                      {!task.isCompleted ? (
+                        <div className="flex items-center gap-6">
+                          <button 
+                            onClick={() => handleStartFocus(task)}
+                            className="flex items-center gap-2 text-primary font-bold text-sm tracking-wide hover:text-primary-light transition-all active:scale-95 group/btn"
+                          >
+                            <Play size={16} className="fill-current group-hover/btn:scale-110 transition-transform" /> Start Focus Session
+                          </button>
+                          <button 
+                            onClick={() => handleMarkCompleted(task)}
+                            className="flex items-center gap-2 text-text-muted font-bold text-sm tracking-wide hover:text-text-main transition-all active:scale-95"
+                          >
+                            <CheckCircle2 size={16} /> Mark as Completed
+                          </button>
+                        </div>
+                      ) : (
+                        <div className="flex items-center gap-2 text-text-muted/50 font-bold text-xs tracking-widest uppercase">
+                          <Sparkles size={14} className="text-primary/40" /> Neural State Captured
+                        </div>
+                      )}
                     </div>
                   </div>
                 );
@@ -202,9 +274,12 @@ export default function StudyPlan() {
 
             <div className="mb-10">
               <div className="flex justify-between items-end mb-3">
-                <span className="text-[11px] font-bold tracking-[0.15em] uppercase text-text-muted">Daily Commitment</span>
+                <span className="text-[11px] font-bold tracking-[0.15em] uppercase text-text-muted">Remaining Commitment</span>
                 <span className="text-3xl font-bold text-text-main leading-none">
-                  {plan.reduce((acc, curr) => acc + curr.allocatedHours, 0).toFixed(1)}
+                  {todayPlan
+                    .filter(t => !t.isCompleted)
+                    .reduce((acc, curr) => acc + Number(curr.allocatedHours), 0)
+                    .toFixed(1)}
                   <span className="text-base text-text-muted ml-1 font-medium">hrs</span>
                 </span>
               </div>
@@ -213,7 +288,7 @@ export default function StudyPlan() {
             <div className="grid grid-cols-2 gap-4 mb-10">
               <div className="bg-surface-sidebar rounded-2xl p-5 border border-surface-border">
                 <span className="text-[9px] font-bold text-text-muted uppercase tracking-widest block mb-2">Total Tasks</span>
-                <span className="text-2xl font-bold text-text-main leading-none">{plan.length}</span>
+                <span className="text-2xl font-bold text-text-main leading-none">{todayPlan.length}</span>
               </div>
               <div className="bg-surface-sidebar rounded-2xl p-5 border border-surface-border">
                 <span className="text-[9px] font-bold text-text-muted uppercase tracking-widest block mb-2">Neural Load</span>
