@@ -1,6 +1,8 @@
 import pandas as pd
 import numpy as np
 from sklearn.ensemble import RandomForestRegressor
+from sklearn.linear_model import LogisticRegression, LinearRegression
+from sklearn.tree import DecisionTreeClassifier
 from sklearn.model_selection import train_test_split
 import joblib
 import os
@@ -20,60 +22,71 @@ df = pd.read_csv(CSV_PATH)
 if 'is_real_data' not in df.columns:
     df['is_real_data'] = 0 
 
-real_data = df[df['is_real_data'] == 1]
-syn_data = df[df['is_real_data'] == 0]
+# Ensure all spec-required columns exist (with fallback)
+required_cols = {
+    'proficiency': 3,
+    'previousScore': 60,
+    'hoursPerDay': 2,
+    'revisionRequired': 0,
+    'urgency': 1.0,
+    'consistencyScore': 0.8,
+    'pastAvgHours': 2.0
+}
 
-print(f"--- Data Distribution ---")
-print(f"Real Sessions: {len(real_data)}")
-print(f"Synthetic Samples: {len(syn_data)}")
-print(f"-------------------------")
+for col, default in required_cols.items():
+    if col not in df.columns:
+        df[col] = default
 
-# 2. Strategy: Prioritize real data
-if len(real_data) >= 500:
-    print("Strategy: Relying primarily on real user data (>500 samples).")
-    train_df = real_data
-else:
-    print("Strategy: Using combined dataset (synthetic + real) for robustness.")
-    train_df = df
+# Feature Engineering
+df['urgency'] = df['syllabusRemaining'] / df['daysLeft'].clip(lower=1)
 
-# 3. Feature Engineering
-# Features: 'difficulty', 'syllabusRemaining', 'daysLeft', 'urgency', 'consistencyScore', 'pastAvgHours'
-train_df['urgency'] = train_df['syllabusRemaining'] / train_df['daysLeft'].clip(lower=1)
+# --- 2. Training Models ---
 
-# Ensure new features exist
-for col in ['consistencyScore', 'pastAvgHours']:
-    if col not in train_df.columns:
-        train_df[col] = 1.0 if col == 'consistencyScore' else 2.0
+# A. Study Hours Prediction (Random Forest Regressor)
+features = ['difficulty', 'proficiency', 'syllabusRemaining', 'daysLeft', 'urgency', 'consistencyScore', 'pastAvgHours']
+X = df[features]
+y_hours = df['actualHours']
 
-# 4. Data Enhancement (Only for synthetic data in combined mode)
-np.random.seed(42)
-synthetic_mask = train_df['is_real_data'] == 0
+X_train, X_test, y_train, y_test = train_test_split(X, y_hours, test_size=0.2, random_state=42)
+hours_model = RandomForestRegressor(n_estimators=100, random_state=42)
+hours_model.fit(X_train, y_train)
+joblib.dump(hours_model, 'ml-service/model/study_model.pkl')
+print(f"✅ Study Hours Model trained. R2: {hours_model.score(X_test, y_test):.4f}")
 
-# Apply noise to synthetic actualHours
-noise = np.random.uniform(-0.1, 0.1, size=len(train_df))
-train_df.loc[synthetic_mask, 'actualHours'] = train_df.loc[synthetic_mask, 'actualHours'] * (1 + noise[synthetic_mask])
-train_df['actualHours'] = train_df['actualHours'].clip(lower=0.1)
+# B. Subject Classification (Logistic Regression)
+# Label: 0=Weak, 1=Medium, 2=Strong
+# Heuristic for training label: Based on (Proficiency - Difficulty)
+df['level_label'] = pd.cut(df['proficiency'] - df['difficulty'], 
+                           bins=[-6, -1, 1, 6], 
+                           labels=[0, 1, 2]).astype(int)
 
-# 5. Model Training
-features = ['difficulty', 'syllabusRemaining', 'daysLeft', 'urgency', 'consistencyScore', 'pastAvgHours']
-X = train_df[features]
-y = train_df['actualHours']
+y_class = df['level_label']
+X_train_c, X_test_c, y_train_c, y_test_c = train_test_split(X, y_class, test_size=0.2, random_state=42)
+class_model = LogisticRegression(max_iter=1000)
+class_model.fit(X_train_c, y_train_c)
+joblib.dump(class_model, 'ml-service/model/class_model.pkl')
+print(f"✅ Subject Classification Model trained. Acc: {class_model.score(X_test_c, y_test_c):.4f}")
 
-if len(train_df) < 10:
-    print("Dataset too small. Skipping retraining.")
-    exit(0)
+# C. Exam Score Prediction (Linear Regression)
+# Use 'completion' or generate target if missing
+y_score = df['completion'] # Using completion as a proxy for predicted score
+X_train_s, X_test_s, y_train_s, y_test_s = train_test_split(X, y_score, test_size=0.2, random_state=42)
+score_model = LinearRegression()
+score_model.fit(X_train_s, y_train_s)
+joblib.dump(score_model, 'ml-service/model/score_model.pkl')
+print(f"✅ Exam Score Predictor trained. R2: {score_model.score(X_test_s, y_test_s):.4f}")
 
-X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+# D. Completion Prediction (Decision Tree Classifier)
+# Target: 1 if actualHours >= plannedHours, else 0
+if 'plannedHours' not in df.columns:
+    df['plannedHours'] = 2.0
+df['completed_on_time'] = (df['actualHours'] >= df['plannedHours']).astype(int)
 
-model = RandomForestRegressor(n_estimators=100, random_state=42)
-model.fit(X_train, y_train)
+y_comp = df['completed_on_time']
+X_train_p, X_test_p, y_train_p, y_test_p = train_test_split(X, y_comp, test_size=0.2, random_state=42)
+comp_model = DecisionTreeClassifier()
+comp_model.fit(X_train_p, y_train_p)
+joblib.dump(comp_model, 'ml-service/model/completion_model.pkl')
+print(f"✅ Completion Probability Model trained. Acc: {comp_model.score(X_test_p, y_test_p):.4f}")
 
-# Evaluation
-train_score = model.score(X_train, y_train)
-test_score = model.score(X_test, y_test)
-print(f"Training R2 Score: {train_score:.4f}")
-print(f"Test R2 Score: {test_score:.4f}")
-
-# 6. Save Model
-joblib.dump(model, 'ml-service/model/study_model.pkl')
-print("Model updated successfully.")
+print("\n--- ALL MODELS UPDATED SUCCESSFULLY ---")

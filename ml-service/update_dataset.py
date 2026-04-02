@@ -87,6 +87,10 @@ def update_dataset():
             # --- Core Features ---
             difficulty = subject.get('difficulty', 3)
             syllabus_rem = subject.get('syllabusRemaining', 0)
+            proficiency = subject.get('proficiency', 3)
+            prev_score = subject.get('previousScore', 0)
+            hours_per_day = subject.get('hoursPerDay', 2)
+            rev_req = 1 if subject.get('revisionRequired', False) else 0
             
             # Calculate daysLeft at time of session
             session_date = session.get('date', datetime.now())
@@ -114,6 +118,10 @@ def update_dataset():
             new_rows.append({
                 'difficulty': difficulty,
                 'syllabusRemaining': syllabus_rem,
+                'proficiency': proficiency,
+                'previousScore': prev_score,
+                'hoursPerDay': hours_per_day,
+                'revisionRequired': rev_req,
                 'daysLeft': days_left,
                 'actualHours': actual_hours,
                 'completion': completion,
