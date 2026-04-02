@@ -1,4 +1,5 @@
 const StudySession = require('../models/StudySession');
+const { runRetrainPipeline } = require('../services/mlService');
 
 async function saveSession(req, res) {
   try {
@@ -17,6 +18,16 @@ async function saveSession(req, res) {
       completion,
       date: date || new Date(),
     });
+
+    // --- Automatic ML Retraining Trigger ---
+    // Check total session count; trigger retraining every 50 sessions
+    const totalSessions = await StudySession.countDocuments();
+    if (totalSessions > 0 && totalSessions % 50 === 0) {
+      console.log(`Threshold reached (${totalSessions} sessions). Triggering auto-retrain...`);
+      runRetrainPipeline().catch(err => {
+        console.error('Background Auto-Retrain Failed:', err.message);
+      });
+    }
 
     return res.status(201).json(newSession);
   } catch (err) {

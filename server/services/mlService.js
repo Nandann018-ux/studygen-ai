@@ -98,4 +98,55 @@ function predictStudyHours({ difficulty, syllabusRemaining, daysLeft }) {
   });
 }
 
-module.exports = { predictStudyHours };
+/**
+ * Runs the ML retraining pipeline (Update Dataset -> Train Model).
+ * Returns a Promise that resolves when complete.
+ */
+function runRetrainPipeline() {
+  return new Promise((resolve, reject) => {
+    const updateScript = path.join(__dirname, '..', '..', 'ml-service', 'update_dataset.py');
+    const trainScript = path.join(__dirname, '..', '..', 'ml-service', 'train.py');
+
+    console.log('Starting ML Retraining Pipeline in Background...');
+
+    // 1. Run Update Dataset
+    const updateProcess = spawn('python3', [updateScript]);
+    let updateOutput = '';
+    let updateError = '';
+
+    updateProcess.stdout.on('data', (data) => (updateOutput += data.toString()));
+    updateProcess.stderr.on('data', (data) => (updateError += data.toString()));
+
+    updateProcess.on('close', (code) => {
+      if (code !== 0) {
+        console.error(`Update script failed with code ${code}: ${updateError}`);
+        return reject(new Error(updateError || updateOutput));
+      }
+
+      console.log('Dataset updated. Starting training...');
+
+      // 2. Run Training
+      const trainProcess = spawn('python3', [trainScript]);
+      let trainOutput = '';
+      let trainError = '';
+
+      trainProcess.stdout.on('data', (data) => (trainOutput += data.toString()));
+      trainProcess.stderr.on('data', (data) => (trainError += data.toString()));
+
+      trainProcess.on('close', (trainCode) => {
+        if (trainCode !== 0) {
+          console.error(`Training script failed with code ${trainCode}: ${trainError}`);
+          return reject(new Error(trainError || trainOutput));
+        }
+
+        console.log('ML Retraining Complete.');
+        resolve({
+          message: 'Model retrained successfully',
+          output: trainOutput.trim()
+        });
+      });
+    });
+  });
+}
+
+module.exports = { predictStudyHours, runRetrainPipeline };
