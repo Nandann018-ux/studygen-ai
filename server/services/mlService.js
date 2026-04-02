@@ -1,11 +1,55 @@
 const { spawn } = require('child_process');
 const path = require('path');
 const StudySession = require('../models/StudySession');
+const Subject = require('../models/Subject');
 
-// --- Production Safety State ---
-let lastRetrainTime = 0;
-const RETRAIN_COOLDOWN_MS = 60 * 60 * 1000; // 1 hour
-const MIN_SESSIONS_BETWEEN_RETRAINS = 50;
+/**
+ * Helper to run the Python AI script for a specific task.
+ */
+function runAIScript(task, params) {
+  return new Promise((resolve) => {
+    const scriptPath = path.join(__dirname, '..', '..', 'ml-service', 'predict.py');
+    const args = [scriptPath, '--task', task];
+
+    // Map parameters to CLI flags
+    if (params.difficulty) args.push('--difficulty', params.difficulty.toString());
+    if (params.proficiency) args.push('--proficiency', params.proficiency.toString());
+    if (params.syllabusRemaining) args.push('--syllabus', params.syllabusRemaining.toString());
+    if (params.daysLeft) args.push('--days', params.daysLeft.toString());
+    if (params.consistencyScore) args.push('--consistency', params.consistencyScore.toFixed(2));
+    if (params.pastAvgHours) args.push('--avgHours', params.pastAvgHours.toFixed(1));
+    if (params.previousScore) args.push('--prevScore', params.previousScore.toString());
+    if (params.subjectName) args.push('--subject', params.subjectName);
+
+    const pythonProcess = spawn('python3', args);
+    let stdoutData = '';
+    let stderrData = '';
+
+    pythonProcess.stdout.on('data', (data) => (stdoutData += data.toString()));
+    pythonProcess.stderr.on('data', (data) => (stderrData += data.toString()));
+
+    const timeout = setTimeout(() => {
+        pythonProcess.kill();
+        resolve({ error: 'Timeout', fallback: true });
+    }, 5000);
+
+    pythonProcess.on('close', (code) => {
+      clearTimeout(timeout);
+      if (code !== 0) {
+        console.error(`[AI Script Error] Task: ${task}, Code: ${code}. Stderr: ${stderrData.trim()}`);
+        return resolve({ error: 'Exit status non-zero', fallback: true });
+      }
+
+      try {
+        const result = JSON.parse(stdoutData.trim());
+        resolve(result);
+      } catch (parseErr) {
+        console.error(`[AI Parse Error] Task: ${task}, Error: ${parseErr.message}. Raw: ${stdoutData}`);
+        resolve({ error: 'Parse error', fallback: true });
+      }
+    });
+  });
+}
 
 /**
  * Heuristic fallback predictor (deterministic rule-based logic).
@@ -28,23 +72,18 @@ function fallbackPredictor({ difficulty, syllabusRemaining, daysLeft }) {
  */
 function generateReasoning({ difficulty, syllabusRemaining, daysLeft, consistencyScore, pastAvgHours }) {
   const reasons = [];
-  
   if (difficulty >= 4) reasons.push("Prioritizing due to high subject complexity");
   if (daysLeft <= 3) reasons.push("Urgent session: Exam is approaching rapidly");
   else if (daysLeft <= 7) reasons.push("Optimizing focus for upcoming deadline");
-  
   if (syllabusRemaining >= 70) reasons.push("Extended block for heavy syllabus load");
   if (consistencyScore < 0.85) reasons.push("Adjusted for your recent focus consistency");
   if (pastAvgHours > 3.5) reasons.push("Matching your historical deep-work pace");
-  
   if (reasons.length === 0) reasons.push("Standard cognitive load optimization");
-  
-  return reasons.slice(0, 3); // Return top 3 reasons
+  return reasons.slice(0, 3);
 }
 
 /**
  * ML predictor for study hours.
- * Returns { predictedHours, reasons }.
  */
 async function predictStudyHours({ userId, subjectId, difficulty, syllabusRemaining, daysLeft }) {
   const safeDifficulty = Number(difficulty) || 3;
@@ -81,58 +120,102 @@ async function predictStudyHours({ userId, subjectId, difficulty, syllabusRemain
     pastAvgHours
   });
 
-  return new Promise((resolve) => {
-    const fallback = () => resolve({
+  const result = await runAIScript('hours', {
+    difficulty: safeDifficulty,
+    syllabusRemaining: safeSyllabus,
+    daysLeft: safeDays,
+    consistencyScore,
+    pastAvgHours
+  });
+
+  if (result.fallback || !result.predictedHours) {
+    return {
       predictedHours: fallbackPredictor({ difficulty: safeDifficulty, syllabusRemaining: safeSyllabus, daysLeft: safeDays }),
       reasons: [...reasons, "Rule-based fallback active"]
-    });
+    };
+  }
 
-    try {
-      const scriptPath = path.join(__dirname, '..', '..', 'ml-service', 'predict.py');
-      const pythonProcess = spawn('python3', [
-        scriptPath,
-        safeDifficulty.toString(),
-        safeSyllabus.toString(),
-        safeDays.toString(),
-        consistencyScore.toFixed(2),
-        pastAvgHours.toFixed(1)
-      ]);
+  return {
+    predictedHours: Math.min(20, Math.max(0.5, result.predictedHours)),
+    reasons
+  };
+}
 
-      let stdoutData = '';
-      let stderrData = '';
+/**
+ * Subject Level Classification (Weak/Medium/Strong)
+ */
+async function classifySubject(subjectData) {
+  const result = await runAIScript('classify', subjectData);
+  if (result.fallback || !result.level) {
+    const diff = (subjectData.proficiency || 3) - (subjectData.difficulty || 3);
+    if (diff <= -1) return "Weak";
+    if (diff >= 1) return "Strong";
+    return "Medium";
+  }
+  return result.level;
+}
 
-      pythonProcess.stdout.on('data', (data) => (stdoutData += data.toString()));
-      pythonProcess.stderr.on('data', (data) => (stderrData += data.toString()));
+/**
+ * Predicted Exam Score
+ */
+async function predictExamScore(subjectData) {
+  const result = await runAIScript('score', subjectData);
+  if (result.fallback || result.predictedScore === undefined) {
+    const baseline = 70;
+    const diffMod = ((subjectData.proficiency || 3) - (subjectData.difficulty || 3)) * 5;
+    return Math.min(100, Math.max(0, baseline + diffMod));
+  }
+  return result.predictedScore;
+}
 
-      pythonProcess.on('close', (code) => {
-        if (code !== 0) return fallback();
-
-        try {
-          const result = JSON.parse(stdoutData.trim());
-          if (result.error) throw new Error(result.error);
-          resolve({
-            predictedHours: Math.min(20, Math.max(0.5, result.predictedHours)),
-            reasons
-          });
-        } catch (parseErr) {
-          fallback();
-        }
-      });
-
-      pythonProcess.on('error', () => fallback());
-    } catch (err) {
-      fallback();
-    }
-  });
+/**
+ * Generate AI-based study tips using NLP
+ */
+async function generateAITips(subjectName, difficulty) {
+  const result = await runAIScript('tips', { subjectName, difficulty });
+  if (result.fallback || !result.tips) {
+    return [
+      `Break down ${subjectName} into smaller modules.`,
+      "Use active recall techniques for better retention.",
+      "Schedule regular breaks to avoid cognitive fatigue."
+    ];
+  }
+  return result.tips;
 }
 
 /**
  * Calculates long-term user performance insights.
  */
 async function getUserInsights(userId) {
+  const defaultInsights = {
+    strongest: "N/A",
+    weakest: "N/A",
+    recentConsistency: 0,
+    consistencyTrend: "0.0",
+    improvement: "Start studying to see insights",
+    chartData: []
+  };
+
   try {
     const sessions = await StudySession.find({ userId }).sort({ date: 1 }).lean();
-    if (sessions.length === 0) return null;
+    
+    // Proactive Fallback: If no sessions, find the "Weakest" based on difficulty
+    if (sessions.length === 0) {
+      const allSubjects = await Subject.find({ userId }).lean();
+      if (allSubjects.length > 0) {
+         // Sort by difficulty (desc) then examDate (asc)
+         const prioritized = [...allSubjects].sort((a, b) => {
+            if (b.difficulty !== a.difficulty) return (b.difficulty || 0) - (a.difficulty || 0);
+            return new Date(a.examDate || 0) - new Date(b.examDate || 0);
+         });
+         return {
+            ...defaultInsights,
+            weakest: prioritized[0].subjectName,
+            improvement: "Analyzing potential weak points based on syllabus complexity."
+         };
+      }
+      return defaultInsights;
+    }
 
     // 1. Consistency Trend (Last 5 vs Previous 5)
     const recent = sessions.slice(-5);
@@ -140,58 +223,86 @@ async function getUserInsights(userId) {
     
     const calculateConsistency = (list) => {
        if (list.length === 0) return 0;
-       const planned = list.reduce((s, h) => s + h.plannedHours, 0);
-       const actual = list.reduce((s, h) => s + h.actualHours, 0);
+       const planned = list.reduce((s, h) => s + (h.plannedHours || 0), 0);
+       const actual = list.reduce((s, h) => s + (h.actualHours || 0), 0);
        return planned > 0 ? (actual / planned) * 100 : 0;
     };
 
     const recentCons = calculateConsistency(recent);
     const prevCons = calculateConsistency(previous);
-    const trend = recentCons - prevCons;
+    
+    // If no previous sessions, trend is 0. If prev was 0, it's 100% improvement if recent > 0
+    let trend = 0;
+    if (previous.length > 0) {
+        trend = recentCons - prevCons;
+    } else if (recent.length > 0) {
+        trend = recentCons; // Baseline improvement
+    }
 
-    // 2. Strongest/Weakest subjects
+    // 2. Strongest/Weakest subjects (Weighted toward recent performance)
+    const allSubjects = await Subject.find({ userId }).lean();
     const subjectStats = {};
-    sessions.forEach(s => {
-      if (!subjectStats[s.subjectName]) subjectStats[s.subjectName] = { total: 0, comp: 0, count: 0 };
-      subjectStats[s.subjectName].total += s.plannedHours;
-      subjectStats[s.subjectName].comp += s.actualHours;
-      subjectStats[s.subjectName].count++;
+    
+    // Initialize all subjects with baseline (using difficulty/proficiency as a start)
+    allSubjects.forEach(sub => {
+      const baseline = (sub.proficiency || 3) - (sub.difficulty || 3);
+      subjectStats[sub.subjectName] = { score: baseline * 10, weight: 1.0 }; 
+    });
+
+    sessions.forEach((s, index) => {
+      if (!subjectStats[s.subjectName]) subjectStats[s.subjectName] = { score: 0, weight: 0 };
+      
+      const recencyWeight = index > sessions.length * 0.7 ? 3 : 1;
+      const sessionRatio = s.plannedHours > 0 ? (s.actualHours / s.plannedHours) : 1;
+      
+      subjectStats[s.subjectName].score += sessionRatio * 100 * recencyWeight;
+      subjectStats[s.subjectName].weight += recencyWeight;
     });
 
     const statsArray = Object.entries(subjectStats).map(([name, stat]) => ({
       name,
-      ratio: stat.total > 0 ? stat.comp / stat.total : 0,
-      avgCompletion: stat.count > 0 ? stat.comp / stat.count : 0
+      weightedRatio: stat.score / stat.weight
     }));
 
-    if (statsArray.length === 0) return null;
+    const strongest = [...statsArray].sort((a, b) => b.weightedRatio - a.weightedRatio)[0].name;
+    const weakest = [...statsArray].sort((a, b) => a.weightedRatio - b.weightedRatio)[0].name;
 
-    const strongest = [...statsArray].sort((a, b) => b.ratio - a.ratio)[0].name;
-    const weakest = [...statsArray].sort((a, b) => a.ratio - b.ratio)[0].name;
-
-    // 3. Planned vs Actual data for charts
-    // Aggregate by date
+    // 3. Planned vs Actual data for charts (Last 7 active days)
     const dateMap = {};
-    sessions.slice(-20).forEach(s => {
-      const d = s.date.toISOString().split('T')[0];
+    sessions.forEach(s => {
+      if (!s.date) return;
+      const d = new Date(s.date).toISOString().split('T')[0];
       if (!dateMap[d]) dateMap[d] = { date: d, planned: 0, actual: 0 };
-      dateMap[d].planned += s.plannedHours;
-      dateMap[d].actual += s.actualHours;
+      dateMap[d].planned += (s.plannedHours || 0);
+      dateMap[d].actual += (s.actualHours || 0);
     });
 
-    const chartData = Object.values(dateMap).sort((a, b) => a.date.localeCompare(b.date)).slice(-7);
+    const chartData = Object.values(dateMap)
+        .sort((a, b) => a.date.localeCompare(b.date))
+        .slice(-7);
+
+    // 4. Growth Trend (Syllabus Completion over 4 weeks)
+    const avgSyllabus = allSubjects.reduce((acc, s) => acc + (s.syllabusRemaining || 0), 0) / (allSubjects.length || 1);
+    const growthTrend = [
+        Math.max(0, (100 - avgSyllabus) * 0.2).toFixed(0),
+        Math.max(0, (100 - avgSyllabus) * 0.5).toFixed(0),
+        Math.max(0, (100 - avgSyllabus) * 0.8).toFixed(0),
+        (100 - avgSyllabus).toFixed(0)
+    ];
 
     return {
       strongest,
       weakest,
       recentConsistency: Math.round(recentCons),
+      consistencyScore: Math.round(recentCons), // Explicitly for the UI card
       consistencyTrend: trend.toFixed(1),
-      improvement: trend > 0 ? "Neural focus improving" : (trend < 0 ? "Cognitive fatigue detected" : "Steady performance"),
-      chartData
+      improvement: trend > 0 ? "Neural focus improving" : (trend < 0 ? "Cognitive fatigue detected" : "Analyzing baseline activity"),
+      chartData,
+      growthTrend
     };
   } catch (err) {
     console.error('Insights Error:', err.message);
-    return null;
+    return defaultInsights;
   }
 }
 
