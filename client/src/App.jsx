@@ -4,6 +4,7 @@ import Auth from './pages/Auth';
 import Dashboard from './pages/Dashboard';
 import Subjects from './pages/Subjects';
 import StudyPlan from './pages/StudyPlan';
+import Focus from './pages/Focus';
 import Analytics from './pages/Analytics';
 import Settings from './pages/Settings';
 import { ThemeProvider } from './context/ThemeContext';
@@ -18,6 +19,7 @@ function App() {
             <Route path="dashboard" element={<Dashboard />} />
             <Route path="subjects" element={<Subjects />} />
             <Route path="plan" element={<StudyPlan />} />
+            <Route path="focus" element={<Focus />} />
             <Route path="analytics" element={<Analytics />} />
             <Route path="settings" element={<Settings />} />
           </Route>
