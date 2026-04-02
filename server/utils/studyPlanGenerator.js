@@ -22,6 +22,8 @@ async function generateStudyPlan(subjects, daysToPlan = 7) {
         );
         const effectiveDaysLeft = Math.max(1, daysLeftFromCurrent);
         let allocatedHours = await predictStudyHours({
+          userId: sub.userId,
+          subjectId: sub._id,
           difficulty: sub.difficulty,
           syllabusRemaining: sub.syllabusRemaining,
           daysLeft: effectiveDaysLeft
