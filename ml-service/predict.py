@@ -5,19 +5,22 @@ import pandas as pd
 import os
 
 try:
-    # Read inputs
+    # 1. Read input arguments
     difficulty = float(sys.argv[1])
     syllabusRemaining = float(sys.argv[2])
     daysLeft = float(sys.argv[3])
 
-    # Compute urgency
+    # 2. Compute urgency feature (same as training)
     urgency = syllabusRemaining / daysLeft if daysLeft > 0 else syllabusRemaining
 
-    # Load model
+    # 3. Load model
     model_path = os.path.join(os.path.dirname(__file__), 'model', 'study_model.pkl')
+    if not os.path.exists(model_path):
+        raise FileNotFoundError(f"Model not found at {model_path}")
+    
     model = joblib.load(model_path)
 
-    # Prepare input dataframe
+    # 4. Prepare input dataframe
     # Features need to match training: 'difficulty', 'syllabusRemaining', 'daysLeft', 'urgency'
     df = pd.DataFrame([{
         'difficulty': difficulty,
@@ -26,15 +29,16 @@ try:
         'urgency': urgency
     }])
 
-    # Predict
-    predicted_hours = model.predict(df)[0]
+    # 5. Predict
+    prediction = model.predict(df)[0]
     
-    # Return realistic range
-    predicted_hours = max(0.5, min(6.0, float(predicted_hours)))
+    # 6. Clamp to realistic range
+    prediction = max(0.5, float(round(prediction, 1)))
 
-    # Output JSON format
-    print(json.dumps({'predicted_hours': predicted_hours}))
+    # 7. Output strict JSON
+    print(json.dumps({"predictedHours": prediction}))
 
 except Exception as e:
-    print(json.dumps({'error': str(e)}))
+    # Any internal errors will be caught and returned as JSON for safe parsing
+    print(json.dumps({"error": str(e)}))
     sys.exit(1)
