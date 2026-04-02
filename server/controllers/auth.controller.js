@@ -68,10 +68,35 @@ async function getMe(req, res) {
       id: user._id,
       name: user.name,
       email: user.email,
+      dailyStudyHours: user.dailyStudyHours || 4,
     });
   } catch (err) {
     console.error(err);
     return res.status(500).json({ message: 'Internal Server Error' });
   }
 }
-module.exports = { registerUser, loginUser, getMe };
+async function updateProfile(req, res) {
+  try {
+    const { name, dailyStudyHours } = req.body;
+    const user = await User.findById(req.user.userId);
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+    if (name) user.name = name;
+    if (dailyStudyHours !== undefined) user.dailyStudyHours = dailyStudyHours;
+    await user.save();
+    return res.status(200).json({
+      message: 'Profile updated successfully',
+      user: {
+        id: user._id,
+        name: user.name,
+        email: user.email,
+        dailyStudyHours: user.dailyStudyHours,
+      },
+    });
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({ message: 'Internal Server Error' });
+  }
+}
+module.exports = { registerUser, loginUser, getMe, updateProfile };

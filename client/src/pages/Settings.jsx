@@ -1,8 +1,51 @@
-import React, { useState } from 'react';
-import { Search, Brain, Monitor, Target, Link as LinkIcon, Lock, Moon, Clock, Volume2 } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Search, Brain, Monitor, Target, Link as LinkIcon, Lock, Moon, Sun, Clock, Volume2, LogOut, User, Save } from 'lucide-react';
+import { useTheme } from '../context/ThemeContext';
+import api from '../services/api';
 
 export default function Settings() {
-  const [activeTab, setActiveTab] = useState('neural');
+  const [activeTab, setActiveTab] = useState('interface');
+  const { theme, toggleTheme } = useTheme();
+  const [user, setUser] = useState({ name: '', email: '', dailyStudyHours: 4 });
+  const [loading, setLoading] = useState(false);
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    const fetchProfile = async () => {
+      setLoading(true);
+      try {
+        const response = await api.get('/auth/me');
+        setUser(response.data);
+      } catch (err) {
+        console.error('Failed to fetch profile:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchProfile();
+  }, []);
+
+  const handleLogout = () => {
+    localStorage.removeItem('studygen_token');
+    localStorage.removeItem('studygen_user');
+    window.location.href = '/auth';
+  };
+
+  const handleSave = async () => {
+    setSaving(true);
+    try {
+      await api.put('/auth/profile', {
+        name: user.name,
+        dailyStudyHours: user.dailyStudyHours
+      });
+      alert('Settings saved successfully!');
+    } catch (err) {
+      console.error('Failed to save settings:', err);
+      alert('Error saving settings.');
+    } finally {
+      setSaving(false);
+    }
+  };
 
   return (
     <div className="max-w-7xl mx-auto pb-12 animate-in fade-in duration-500">
@@ -10,29 +53,19 @@ export default function Settings() {
         <h1 className="text-[52px] font-bold tracking-tight text-text-main mb-4 leading-none">
           System <span className="text-primary">Preferences</span>
         </h1>
-        <p className="text-[#a1a1aa] text-lg leading-relaxed">
+        <p className="text-text-muted text-lg leading-relaxed">
           Configure your cognitive sanctuary. Fine-tune your AI models, notification protocols, and visual environment.
         </p>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-12">
-        {/* Sidebar */}
         <div className="lg:col-span-4 space-y-8">
-          <div className="relative">
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-text-muted" size={18} />
-            <input 
-              type="text" 
-              placeholder="Search settings..." 
-              className="w-full bg-surface border border-surface-border rounded-full py-3.5 pl-12 pr-6 text-sm text-text-main focus:outline-none focus:border-primary/50 focus:ring-2 focus:ring-primary/20 transition-all placeholder:text-text-muted hover:bg-surface-border/50 hover:shadow-sm"
-            />
-          </div>
-
           <nav className="space-y-2">
             <NavBtn 
-              icon={<Brain size={18} />} 
-              label="AI & Neural Models" 
-              active={activeTab === 'neural'} 
-              onClick={() => setActiveTab('neural')} 
+              icon={<User size={18} />} 
+              label="Profile & Identity" 
+              active={activeTab === 'profile'} 
+              onClick={() => setActiveTab('profile')} 
             />
             <NavBtn 
               icon={<Monitor size={18} />} 
@@ -47,109 +80,118 @@ export default function Settings() {
               onClick={() => setActiveTab('cognitive')} 
             />
             <NavBtn 
-              icon={<LinkIcon size={18} />} 
-              label="Connectivity & APIs" 
-              active={activeTab === 'apis'} 
-              onClick={() => setActiveTab('apis')} 
-            />
-            <NavBtn 
-              icon={<Lock size={18} />} 
-              label="Data Sovereignty" 
-              active={activeTab === 'data'} 
-              onClick={() => setActiveTab('data')} 
+              icon={<Brain size={18} />} 
+              label="AI & Neural Models" 
+              active={activeTab === 'neural'} 
+              onClick={() => setActiveTab('neural')} 
             />
           </nav>
+
+          <div className="pt-8 border-t border-surface-border">
+            <button 
+              onClick={handleLogout}
+              className="w-full flex items-center gap-4 px-6 py-4 rounded-2xl text-red-500 hover:bg-red-500/10 transition-all font-semibold text-sm active:scale-95"
+            >
+              <LogOut size={18} />
+              Terminate Session
+            </button>
+          </div>
         </div>
 
-        {/* Content Area */}
         <div className="lg:col-span-8">
-          {activeTab === 'neural' && (
-            <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
-              
-              {/* Box 1 */}
-              <div className="bg-surface rounded-[32px] p-8 md:p-10 border border-surface-border mb-8 shadow-sm hover:border-[#383b4b] transition-colors">
+          {activeTab === 'profile' && (
+            <div className="animate-in fade-in slide-in-from-bottom-4 duration-500 space-y-8">
+              <div className="bg-surface rounded-[32px] p-8 md:p-10 border border-surface-border shadow-sm">
                 <div className="flex items-center gap-3 mb-8">
                   <div className="w-2 h-6 bg-primary rounded-full"></div>
-                  <h2 className="text-xl font-bold text-text-main tracking-tight">Neural Network Configurations</h2>
+                  <h2 className="text-xl font-bold text-text-main tracking-tight">Profile Credentials</h2>
                 </div>
-
-                <div className="space-y-10">
+                <div className="space-y-6">
                   <div>
-                    <div className="flex justify-between items-end mb-4">
-                      <label className="block text-sm font-bold text-text-main">Aggressiveness of Study Plan</label>
-                      <span className="text-[10px] font-bold text-primary tracking-widest uppercase bg-primary/10 px-3 py-1 rounded-full">Intensive</span>
-                    </div>
-                    <p className="text-xs text-text-muted mb-6 leading-relaxed max-w-xl font-medium">
-                      Currently set to highly intensive. The AI assumes you have a strong cognitive baseline and will minimize long breaks.
-                    </p>
-                    <div className="pt-4 relative">
-                      <div className="w-full h-1.5 bg-surface-sidebar rounded-full">
-                        <div className="absolute top-4 left-0 w-full flex justify-between px-1">
-                           {[0, 1, 2, 3, 4].map(i => (
-                             <div key={i} className={`w-1 h-3 rounded-full -mt-2 ${i <= 3 ? 'bg-primary' : 'bg-surface-border'}`}></div>
-                           ))}
-                        </div>
-                        <div className="h-full bg-primary rounded-full relative z-10" style={{ width: '75%' }}>
-                           <div className="absolute right-0 top-1/2 -translate-y-1/2 w-4 h-4 bg-white rounded-full shadow-[0_0_10px_rgba(0,208,132,0.8)] border border-[#e2e4ec]"></div>
-                        </div>
-                      </div>
-                    </div>
+                    <label className="block text-sm font-bold text-text-main mb-2">Display Name</label>
+                    <input 
+                      type="text" 
+                      value={user.name}
+                      onChange={(e) => setUser({...user, name: e.target.value})}
+                      className="w-full bg-surface-sidebar border border-surface-border rounded-xl py-3 px-4 text-text-main focus:outline-none focus:border-primary/50"
+                    />
                   </div>
-
-                  <div className="pt-6 border-t border-surface-border">
-                    <label className="block text-sm font-bold text-text-main mb-4">Spaced Repetition Decay Rate</label>
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                      <SelectBtn label="Conservative" desc="Review often" active={false} />
-                      <SelectBtn label="Optimal (AI Driven)" desc="Dynamic curves" active={true} />
-                      <SelectBtn label="Aggressive" desc="Push limits" active={false} />
-                    </div>
+                  <div>
+                    <label className="block text-sm font-bold text-text-main mb-2">Email Endpoint</label>
+                    <input 
+                      type="email" 
+                      value={user.email}
+                      disabled
+                      className="w-full bg-surface-sidebar border border-surface-border rounded-xl py-3 px-4 text-text-muted cursor-not-allowed"
+                    />
                   </div>
                 </div>
               </div>
+            </div>
+          )}
 
-              {/* Box 2 */}
-              <div className="bg-surface rounded-[32px] p-8 md:p-10 border border-surface-border mb-10 shadow-sm hover:border-[#383b4b] transition-colors">
+          {activeTab === 'interface' && (
+            <div className="animate-in fade-in slide-in-from-bottom-4 duration-500 space-y-8">
+              <div className="bg-surface rounded-[32px] p-8 md:p-10 border border-surface-border shadow-sm">
                 <div className="flex items-center gap-3 mb-8">
-                  <div className="w-2 h-6 bg-text-muted rounded-full"></div>
-                  <h2 className="text-xl font-bold text-text-main tracking-tight">Sanctuary Mode Triggers</h2>
+                  <div className="w-2 h-6 bg-primary rounded-full"></div>
+                  <h2 className="text-xl font-bold text-text-main tracking-tight">Visual Environment</h2>
                 </div>
-
-                <div className="space-y-8">
-                  <ToggleRow 
-                    icon={<Moon size={18} />} 
-                    title="Auto-enable Deep Work Mode" 
-                    desc="Block distracting sites when a focus session begins."
-                    active={true}
-                  />
-                  <ToggleRow 
-                    icon={<Volume2 size={18} />} 
-                    title="Ambient Cognitive Noise" 
-                    desc="Play binaural beats (40Hz gamma waves) automatically."
-                    active={true}
-                  />
-                  <ToggleRow 
-                    icon={<Clock size={18} />} 
-                    title="Strict Timeline Enforcement" 
-                    desc="Lock the current session if you attempt to switch subjects early."
-                    active={false}
-                  />
-                </div>
+                <ToggleRow 
+                  icon={theme === 'dark' ? <Moon size={18} /> : <Sun size={18} />} 
+                  title="Dark Architecture" 
+                  desc="Switch between light and dark visual sanctuary themes."
+                  active={theme === 'dark'}
+                  onToggle={toggleTheme}
+                />
               </div>
-
-              <div className="flex justify-end">
-                <button className="bg-primary hover:bg-primary-light text-[#0a0b10] px-10 py-4 rounded-full font-bold text-sm tracking-wide shadow-xl shadow-primary/20 transition-all active:scale-95 hover:scale-105 group flex items-center gap-2 inline-block">
-                  Save Changes
-                </button>
-              </div>
-
             </div>
           )}
 
-          {activeTab !== 'neural' && (
+          {activeTab === 'cognitive' && (
+            <div className="animate-in fade-in slide-in-from-bottom-4 duration-500 space-y-8">
+              <div className="bg-surface rounded-[32px] p-8 md:p-10 border border-surface-border shadow-sm">
+                <div className="flex items-center gap-3 mb-8">
+                  <div className="w-2 h-6 bg-primary rounded-full"></div>
+                  <h2 className="text-xl font-bold text-text-main tracking-tight">Cognitive Thresholds</h2>
+                </div>
+                <div>
+                  <label className="block text-sm font-bold text-text-main mb-4 flex justify-between">
+                    Daily Active Focus Capacity
+                    <span className="text-primary">{user.dailyStudyHours} hrs</span>
+                  </label>
+                  <input 
+                    type="range" 
+                    min="1" 
+                    max="16" 
+                    value={user.dailyStudyHours}
+                    onChange={(e) => setUser({...user, dailyStudyHours: parseInt(e.target.value)})}
+                    className="w-full accent-primary bg-surface-sidebar h-2 rounded-lg appearance-none cursor-pointer"
+                  />
+                  <p className="mt-4 text-xs text-text-muted font-medium">
+                    Adjusting this limits the total study hours the AI will allocate per day.
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {activeTab === 'neural' && (
             <div className="bg-surface rounded-[32px] p-20 border border-surface-border flex items-center justify-center text-center">
-               <p className="text-text-muted font-medium">Settings module under construction for this section.</p>
+               <p className="text-text-muted font-medium">Neural settings are optimized automatically by the model.</p>
             </div>
           )}
+
+          <div className="flex justify-end mt-8">
+            <button 
+              onClick={handleSave}
+              disabled={saving}
+              className="bg-primary hover:bg-primary-light text-[#0a0b10] px-10 py-4 rounded-full font-bold text-sm tracking-wide shadow-xl shadow-primary/20 transition-all active:scale-95 group flex items-center gap-2 hover:scale-105 disabled:opacity-50"
+            >
+              <Save size={18} />
+              {saving ? 'Syncing...' : 'Save Preferences'}
+            </button>
+          </div>
         </div>
       </div>
     </div>
@@ -174,16 +216,7 @@ function NavBtn({ icon, label, active, onClick }) {
   );
 }
 
-function SelectBtn({ label, desc, active }) {
-  return (
-    <button className={`p-4 rounded-2xl border text-left transition-all active:scale-95 hover:scale-105 hover:shadow-lg ${active ? 'bg-primary/10 border-primary text-primary' : 'bg-surface-hover border-surface-border text-text-muted hover:border-text-muted'}`}>
-      <span className="block font-bold text-sm mb-1 text-text-main">{label}</span>
-      <span className="block text-xs opacity-80">{desc}</span>
-    </button>
-  );
-}
-
-function ToggleRow({ icon, title, desc, active }) {
+function ToggleRow({ icon, title, desc, active, onToggle }) {
   return (
     <div className="flex items-start justify-between gap-6">
       <div className="flex gap-4">
@@ -195,7 +228,10 @@ function ToggleRow({ icon, title, desc, active }) {
           <p className="text-xs text-text-muted font-medium">{desc}</p>
         </div>
       </div>
-      <button className={`w-12 h-6 rounded-full relative transition-colors duration-300 flex-shrink-0 ${active ? 'bg-primary' : 'bg-surface-sidebar border border-surface-border'}`}>
+      <button 
+        onClick={onToggle}
+        className={`w-12 h-6 rounded-full relative transition-colors duration-300 flex-shrink-0 ${active ? 'bg-primary' : 'bg-surface-sidebar border border-surface-border'}`}
+      >
         <div className={`absolute top-1/2 -translate-y-1/2 w-4 h-4 rounded-full bg-white transition-all duration-300 ${active ? 'left-[26px] shadow-sm' : 'left-1'}`}></div>
       </button>
     </div>

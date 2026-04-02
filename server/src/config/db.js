@@ -29,12 +29,13 @@ async function connectDB() {
   }
   try {
     const finalUri = encodeMongoPassword(uri);
-    console.log('Connecting to MongoDB...');
+    const url = new URL(finalUri);
+    console.log(`Connecting to MongoDB at ${url.host}${url.pathname}...`);
     await mongoose.connect(finalUri);
-    console.log('MongoDB connected');
+    console.log('MongoDB connected successfully');
   } catch (err) {
     console.error('MongoDB connection failed:');
-    console.error(err && err.stack ? err.stack : err);
+    console.error(err.message || err);
     process.exit(1);
   }
 }
