@@ -1,10 +1,21 @@
 const Subject = require('../models/Subject');
 async function addSubject(req, res) {
   try {
-    const { subjectName, difficulty, proficiency, syllabusRemaining, examDate } = req.body;
+    const { 
+      subjectName, 
+      difficulty, 
+      proficiency, 
+      syllabusRemaining, 
+      examDate,
+      previousScore,
+      hoursPerDay,
+      revisionRequired 
+    } = req.body;
+
     if (!subjectName) {
       return res.status(400).json({ message: 'subjectName is required' });
     }
+
     const newSubject = await Subject.create({
       userId: req.user.userId,
       subjectName,
@@ -12,6 +23,9 @@ async function addSubject(req, res) {
       proficiency,
       syllabusRemaining,
       examDate,
+      previousScore,
+      hoursPerDay,
+      revisionRequired
     });
     return res.status(201).json(newSubject);
   } catch (err) {
