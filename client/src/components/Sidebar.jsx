@@ -1,5 +1,5 @@
 import { Link, useLocation } from 'react-router-dom';
-import { LayoutDashboard, Book, Calendar, Activity, Settings } from 'lucide-react';
+import { LayoutDashboard, Book, Calendar, Timer, Activity, Settings } from 'lucide-react';
 
 export default function Sidebar({ className }) {
   const location = useLocation();
@@ -8,6 +8,7 @@ export default function Sidebar({ className }) {
     { name: 'Dashboard', path: '/dashboard', icon: <LayoutDashboard size={18} /> },
     { name: 'Subjects', path: '/subjects', icon: <Book size={18} /> },
     { name: 'Plan', path: '/plan', icon: <Calendar size={18} /> },
+    { name: 'Focus', path: '/focus', icon: <Timer size={18} /> },
     { name: 'Analytics', path: '/analytics', icon: <Activity size={18} /> },
     { name: 'Settings', path: '/settings', icon: <Settings size={18} /> }
   ];
