@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Play, FileText, BarChart2, Sparkles, Wand2, CheckCircle2, X } from 'lucide-react';
+import { Play, FileText, BarChart2, Sparkles, Wand2, CheckCircle2, X, Info } from 'lucide-react';
 import api from '../services/api';
 
 export default function StudyPlan() {
@@ -10,6 +10,7 @@ export default function StudyPlan() {
   const [showModal, setShowModal] = useState(false);
   const [sessionData, setSessionData] = useState({ actualHours: '', completion: 100 });
   const [submitting, setSubmitting] = useState(false);
+  const [toast, setToast] = useState(null);
 
   const fetchPlan = async () => {
     try {
@@ -26,14 +27,19 @@ export default function StudyPlan() {
     fetchPlan();
   }, []);
 
+  const showFeedback = (msg) => {
+    setToast(msg);
+    setTimeout(() => setToast(null), 3000);
+  };
+
   const handleRegenerate = async () => {
     setGenerating(true);
     try {
       await api.post('/plans/generate');
       await fetchPlan();
+      showFeedback("Neural pathways recalibrated 🧠");
     } catch (err) {
       console.error('Failed to generate plan:', err);
-      alert('Error generating plan. Have you added subjects?');
     } finally {
       setGenerating(false);
     }
@@ -61,10 +67,10 @@ export default function StudyPlan() {
         date: new Date()
       });
       setShowModal(false);
-      alert('Session tracked successfully!');
+      showFeedback("AI updated your study pattern 📈");
+      // Optional: fetch insights if needed, or just let dashboard handle it
     } catch (err) {
       console.error('Failed to save session:', err);
-      alert('Error saving session progress.');
     } finally {
       setSubmitting(false);
     }
@@ -81,7 +87,14 @@ export default function StudyPlan() {
   let currentStartHour = 8;
 
   return (
-    <div className="max-w-7xl mx-auto pb-12 animate-in fade-in duration-500">
+    <div className="max-w-7xl mx-auto pb-12 animate-in fade-in duration-700 relative">
+      {toast && (
+        <div className="fixed top-24 left-1/2 -translate-x-1/2 z-[200] bg-primary text-[#0a0b10] px-6 py-3 rounded-full font-bold shadow-2xl animate-in slide-in-from-top-10 duration-300 flex items-center gap-2">
+          <Sparkles size={18} />
+          {toast}
+        </div>
+      )}
+
       <div className="mb-12 mt-4 max-w-2xl">
         <h1 className="text-[52px] font-bold tracking-tight text-text-main mb-4 leading-none">
           Today's Peak <span className="text-primary">Sanctuary</span>
@@ -98,7 +111,7 @@ export default function StudyPlan() {
           <div className="space-y-8 flex flex-col relative z-10">
             {loading ? (
               <div className="text-center py-20 text-text-muted font-bold tracking-widest uppercase">
-                Loading Neural Roadmap...
+                Synchronizing Neural Roadmap...
               </div>
             ) : plan.length === 0 ? (
               <div className="text-center py-20 text-text-muted font-bold tracking-widest uppercase bg-surface border border-surface-border rounded-[32px]">
@@ -118,7 +131,7 @@ export default function StudyPlan() {
                       </div>
                     </div>
                     <div className="bg-surface border border-surface-border rounded-[32px] p-8 w-full hover:border-[#383b4b] transition-all">
-                      <div className="flex justify-between items-start mb-4">
+                      <div className="flex justify-between items-start mb-6">
                         <div>
                           <span className="text-xs font-bold tracking-widest uppercase text-primary mb-2 block">
                             {startTimeStr} — {endTimeStr}
@@ -128,17 +141,30 @@ export default function StudyPlan() {
                           </h3>
                         </div>
                         <div className="flex gap-2">
-                          <span className="px-3 py-1.5 rounded-full bg-surface-hover border border-surface-border text-[9px] font-bold text-text-muted tracking-wider uppercase">
-                            {task.allocatedHours > 2 ? 'High Intensity' : 'Standard'}
+                          <span className="px-3 py-1.5 rounded-full bg-surface-hover border border-surface-border text-[9px] font-bold text-text-muted tracking-wide uppercase">
+                            {task.allocatedHours > 2 ? 'High Intensity' : 'Standard Session'}
                           </span>
                         </div>
                       </div>
-                      <p className="text-text-muted leading-relaxed max-w-2xl mb-8">
-                        Allocated {task.allocatedHours.toFixed(1)} hours of focus time for this subject based on your spaced repetition needs.
+
+                      {task.reasons && task.reasons.length > 0 && (
+                        <div className="flex flex-wrap gap-2 mb-6 animate-in slide-in-from-left-4 duration-500">
+                          {task.reasons.map((reason, rIdx) => (
+                            <div key={rIdx} className="flex items-center gap-1.5 bg-primary/5 border border-primary/10 px-3 py-1 rounded-lg">
+                              <Info size={10} className="text-primary" />
+                              <span className="text-[10px] font-bold text-text-muted uppercase tracking-wider">{reason}</span>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+
+                      <p className="text-text-muted leading-relaxed max-w-2xl mb-8 font-medium">
+                        Allocated {task.allocatedHours.toFixed(1)} hours of focus time based on retention algorithms and your cognitive profile.
                       </p>
+                      
                       <div className="flex items-center gap-6">
-                        <button className="flex items-center gap-2 text-primary font-bold text-sm tracking-wide hover:text-primary-light transition-all active:scale-95 hover:translate-x-1">
-                          <Play size={16} className="fill-current" /> Start Focus Session
+                        <button className="flex items-center gap-2 text-primary font-bold text-sm tracking-wide hover:text-primary-light transition-all active:scale-95 group/btn">
+                          <Play size={16} className="fill-current group-hover/btn:scale-110 transition-transform" /> Start Focus Session
                         </button>
                         <button 
                           onClick={() => handleMarkCompleted(task)}
@@ -157,17 +183,18 @@ export default function StudyPlan() {
               <button 
                 onClick={handleRegenerate}
                 disabled={generating}
-                className="w-full bg-primary hover:bg-primary-light text-[#0a0b10] py-5 rounded-full font-bold text-lg tracking-tight transition-all shadow-xl shadow-primary/20 flex items-center justify-center gap-2 group disabled:opacity-50 disabled:cursor-not-allowed active:scale-[0.98] hover:shadow-primary/40"
+                className="w-full bg-primary hover:bg-primary-light text-[#0a0b10] py-5 rounded-full font-bold text-lg tracking-tight transition-all shadow-xl shadow-primary/20 flex items-center justify-center gap-2 group disabled:opacity-50 disabled:cursor-not-allowed active:scale-[0.98] hover:shadow-primary/40 overflow-hidden relative"
               >
+                <div className={`absolute inset-0 bg-white/20 transition-transform duration-1000 ${generating ? 'translate-x-0' : '-translate-x-full'}`}></div>
                 <Wand2 size={20} className={generating ? "animate-spin" : "group-hover:rotate-12 transition-transform"} /> 
-                {generating ? 'Calculating Neural Pathways...' : 'Regenerate Neural Plan'}
+                {generating ? 'Rebuilding Cognitive Grid...' : 'Regenerate Neural Plan'}
               </button>
             </div>
           </div>
         </div>
 
         <div className="lg:col-span-4">
-          <div className="bg-surface border border-surface-border rounded-[32px] p-8 sticky top-6">
+          <div className="bg-surface border border-surface-border rounded-[32px] p-8 sticky top-6 hover:border-[#383b4b] transition-colors">
             <div className="flex items-center gap-3 mb-10">
               <BarChart2 size={24} className="text-primary" />
               <h2 className="text-xl font-bold text-text-main tracking-tight">Plan Analytics</h2>
@@ -178,7 +205,7 @@ export default function StudyPlan() {
                 <span className="text-[11px] font-bold tracking-[0.15em] uppercase text-text-muted">Daily Commitment</span>
                 <span className="text-3xl font-bold text-text-main leading-none">
                   {plan.reduce((acc, curr) => acc + curr.allocatedHours, 0).toFixed(1)}
-                  <span className="text-base text-text-muted ml-1">hrs</span>
+                  <span className="text-base text-text-muted ml-1 font-medium">hrs</span>
                 </span>
               </div>
             </div>
@@ -189,22 +216,21 @@ export default function StudyPlan() {
                 <span className="text-2xl font-bold text-text-main leading-none">{plan.length}</span>
               </div>
               <div className="bg-surface-sidebar rounded-2xl p-5 border border-surface-border">
-                <span className="text-[9px] font-bold text-text-muted uppercase tracking-widest block mb-2">Intensity</span>
-                <span className="text-2xl font-bold text-text-main leading-none">High</span>
+                <span className="text-[9px] font-bold text-text-muted uppercase tracking-widest block mb-2">Neural Load</span>
+                <span className="text-2xl font-bold text-text-main leading-none">Optimal</span>
               </div>
             </div>
 
-            <div className="relative rounded-2xl overflow-hidden border border-surface-border group">
-              <div className="absolute inset-0 bg-gradient-to-t from-surface to-transparent z-10"></div>
-              <div className="h-28 w-full bg-surface-sidebar flex items-end opacity-50 px-2 pt-4 gap-[2px]">
-                {Array.from({length: 40}).map((_, i) => (
-                  <div key={i} className="flex-1 bg-primary/40 rounded-t-sm" style={{ height: `${Math.random() * 80 + 10}%` }}></div>
-                ))}
-              </div>
-              <div className="absolute bottom-4 left-4 z-20">
-                <span className="text-[10px] font-bold tracking-widest uppercase text-primary block mb-1">AI Insights</span>
-                <span className="text-sm font-semibold text-text-main">Neural plasticity peaking</span>
-              </div>
+            <div className="relative rounded-2xl overflow-hidden border border-surface-border group p-1 bg-surface-sidebar">
+               <div className="h-32 w-full flex items-end justify-center gap-1.5 px-2 pb-2">
+                  {Array.from({length: 12}).map((_, i) => (
+                    <div key={i} className="w-full bg-primary/20 rounded-t-lg transition-all duration-700 hover:bg-primary/40" style={{ height: `${Math.random() * 60 + 20}%`, transitionDelay: `${i * 50}ms` }}></div>
+                   ))}
+               </div>
+               <div className="absolute top-4 left-4 z-20">
+                  <span className="text-[10px] font-bold tracking-[0.2em] uppercase text-primary mb-1 block">Live Flow</span>
+                  <span className="text-xs font-bold text-white">Focus peaking now</span>
+               </div>
             </div>
           </div>
         </div>
@@ -214,29 +240,30 @@ export default function StudyPlan() {
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-black/60 backdrop-blur-sm animate-in fade-in duration-300">
           <div className="bg-surface border border-surface-border w-full max-w-md rounded-[32px] p-8 shadow-2xl animate-in zoom-in-95 duration-300">
             <div className="flex justify-between items-center mb-6">
-              <h3 className="text-2xl font-bold text-text-main tracking-tight">Session Protocol</h3>
-              <button onClick={() => setShowModal(false)} className="text-text-muted hover:text-text-main">
+              <h3 className="text-2xl font-bold text-text-main tracking-tight">Session Success</h3>
+              <button onClick={() => setShowModal(false)} className="text-text-muted hover:text-text-main transition-colors">
                 <X size={24} />
               </button>
             </div>
             
             <form onSubmit={handleSubmitSession} className="space-y-6">
               <div>
-                <label className="block text-sm font-bold text-text-main mb-2">Actual Focus Duration (hrs)</label>
+                <label className="block text-sm font-bold text-text-main mb-3">Actual Focus Duration (hrs)</label>
                 <input 
                   type="number" 
                   step="0.1"
                   required
+                  autoFocus
                   value={sessionData.actualHours}
                   onChange={(e) => setSessionData({...sessionData, actualHours: e.target.value})}
-                  className="w-full bg-surface-sidebar border border-surface-border rounded-xl py-3 px-4 text-text-main focus:outline-none focus:border-primary/50"
+                  className="w-full bg-surface-sidebar border border-surface-border rounded-xl py-4 px-4 text-white focus:outline-none focus:border-primary/50 transition-all font-bold"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-bold text-text-main mb-2 flex justify-between">
-                  Syllabus Completion
-                  <span className="text-primary">{sessionData.completion}%</span>
+                <label className="block text-sm font-bold text-text-main mb-4 flex justify-between">
+                  Syllabus Mastered
+                  <span className="text-primary font-bold">{sessionData.completion}%</span>
                 </label>
                 <input 
                   type="range" 
@@ -251,9 +278,9 @@ export default function StudyPlan() {
               <button 
                 type="submit"
                 disabled={submitting}
-                className="w-full bg-primary hover:bg-primary-light text-[#0a0b10] py-4 rounded-xl font-bold text-sm tracking-wide transition-all active:scale-95 disabled:opacity-50 shadow-lg shadow-primary/20"
+                className="w-full bg-primary hover:bg-primary-light text-[#0a0b10] py-4 rounded-xl font-bold tracking-wide transition-all active:scale-95 disabled:opacity-50 shadow-lg shadow-primary/20 hover:scale-[1.02]"
               >
-                {submitting ? 'Archiving Neural Data...' : 'Log Session Success'}
+                {submitting ? 'Synthesizing Results...' : 'Log Session Success'}
               </button>
             </form>
           </div>
