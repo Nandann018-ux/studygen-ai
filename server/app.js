@@ -16,10 +16,21 @@ app.use('/api/plans', planRoutes);
 app.use('/api/session', sessionRoutes);
 app.use('/api/ml', mlRoutes);
 app.use((req, res) => {
-  res.status(404).json({ message: 'Not Found' });
+  res.status(404).json({ success: false, message: 'Endpoint Not Found' });
 });
+
+/**
+ * Global Error Handler: Prevents server crashes and silent failures.
+ */
 app.use((err, req, res, next) => {
-  console.error(err);
-  res.status(500).json({ message: 'Internal Server Error' });
+  console.error('\x1b[31m%s\x1b[0m', '!! Neural Server Error:', err.message);
+  console.error(err.stack);
+  
+  res.status(err.status || 500).json({ 
+    success: false, 
+    message: err.message || 'Internal Server Error',
+    error: process.env.NODE_ENV === 'development' ? err.stack : undefined 
+  });
 });
+
 module.exports = app;
