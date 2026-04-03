@@ -1,22 +1,24 @@
 const StudySession = require('../models/StudySession');
 const StudyPlan = require('../models/StudyPlan');
-const { runRetrainPipeline } = require('../services/mlService');
 
 async function saveSession(req, res) {
   try {
-    const { subjectId, subjectName, plannedHours, actualHours, completion, date, planId } = req.body;
+    const { subjectId, name, subjectName, plannedHours, actualHours, completion, date, planId } = req.body;
     
-    if (!subjectId || !subjectName || plannedHours === undefined || actualHours === undefined) {
-      return res.status(400).json({ message: 'Missing required session data' });
+    // Support both 'name' and 'subjectName' for transition period, then use 'name'
+    const finalName = name || subjectName;
+
+    if (!subjectId || !finalName || plannedHours === undefined || actualHours === undefined) {
+      return res.status(400).json({ message: 'Missing required session data: subjectId, name, and hours are mandatory.' });
     }
 
     const newSession = await StudySession.create({
       userId: req.user.userId,
       subjectId,
-      subjectName,
-      plannedHours,
-      actualHours,
-      completion,
+      name: finalName,
+      plannedHours: Number(plannedHours),
+      actualHours: Number(actualHours),
+      completion: Number(completion || 0),
       date: date || new Date(),
     });
 
@@ -26,14 +28,17 @@ async function saveSession(req, res) {
       await StudyPlan.findByIdAndUpdate(planId, { isCompleted: true });
     }
 
-    // --- Automatic ML Retraining Trigger ---
-    // Offload safety checks and background execution to the service
-    const { triggerAutoRetrain } = require('../services/mlService');
-    triggerAutoRetrain();
+    // --- Automatic ML Retrain Trigger ---
+    try {
+      const { triggerAutoRetrain } = require('../services/mlService');
+      if (triggerAutoRetrain) triggerAutoRetrain();
+    } catch (e) {
+      console.warn("ML Retrain trigger skipped:", e.message);
+    }
 
     return res.status(201).json(newSession);
   } catch (err) {
-    console.error(err);
+    console.error("[Session Controller] Save Error:", err);
     return res.status(500).json({ message: 'Internal Server Error' });
   }
 }
