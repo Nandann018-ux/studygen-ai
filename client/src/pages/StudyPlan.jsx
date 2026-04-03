@@ -99,6 +99,10 @@ export default function StudyPlan() {
     e.preventDefault();
     setSubmitting(true);
     try {
+      // Step 1: Mark the plan item as completed via dedicated endpoint
+      await api.patch(`/plans/${selectedTask._id}/complete`);
+
+      // Step 2: Save the study session data
       await api.post('/session', {
         subjectId: selectedTask.subjectId,
         name: selectedTask.name || selectedTask.subjectName,
@@ -109,14 +113,13 @@ export default function StudyPlan() {
         planId: selectedTask._id
       });
 
-      setPlan(prev => prev.map(t => 
-        t._id === selectedTask._id ? { ...t, isCompleted: true } : t
-      ));
-
+      // Force refresh from database to confirm persistence and remove completed items
+      await fetchPlan();
       setShowModal(false);
-      showFeedback("AI updated your study pattern 📈");
+      showFeedback("Neural state captured successfully 📈");
     } catch (err) {
       console.error('Failed to save session:', err);
+      showFeedback("Failed to sync session. Please try again.");
     } finally {
       setSubmitting(false);
     }
@@ -166,12 +169,16 @@ export default function StudyPlan() {
                   <span className="neural-dot"></span>
                 </div>
               </div>
+            ) : todayPlan.filter(t => !t.isCompleted).length === 0 && todayPlan.length > 0 ? (
+              <div className="text-center py-20 text-text-muted font-bold tracking-widest uppercase bg-surface border border-surface-border rounded-[32px]">
+                All Neural Nodes Optimized for Today! 🏆
+              </div>
             ) : todayPlan.length === 0 ? (
               <div className="text-center py-20 text-text-muted font-bold tracking-widest uppercase bg-surface border border-surface-border rounded-[32px]">
                 No Sessions Scheduled for Today.
               </div>
             ) : (
-              todayPlan.map((task, idx) => {
+              todayPlan.filter(task => !task.isCompleted).map((task, idx) => {
                 const startTimeStr = formatTime(currentStartHour);
                 const endTimeStr = formatTime(currentStartHour + task.allocatedHours);
                 currentStartHour += task.allocatedHours;
@@ -183,26 +190,20 @@ export default function StudyPlan() {
                         <div className="w-2.5 h-2.5 rounded-full bg-primary shadow-[0_0_10px_rgba(0,208,132,0.8)]"></div>
                       </div>
                     </div>
-                    <div className={`bg-surface border border-surface-border rounded-[32px] p-8 w-full transition-all ${task.isCompleted ? 'opacity-60 grayscale-[0.3]' : 'hover:border-[#383b4b]'}`}>
+                    <div className="bg-surface border border-surface-border rounded-[32px] p-8 w-full transition-all hover:border-[#383b4b]">
                       <div className="flex justify-between items-start mb-6">
                         <div>
                           <span className="text-xs font-bold tracking-widest uppercase text-primary mb-2 block">
                             {startTimeStr} — {endTimeStr}
                           </span>
-                          <h3 className={`text-2xl font-bold text-text-main tracking-tight ${task.isCompleted ? 'line-through decoration-primary/50' : ''}`}>
+                          <h3 className="text-2xl font-bold text-text-main tracking-tight">
                             {task.name || task.subjectName}
                           </h3>
                         </div>
                         <div className="flex gap-2">
-                          {task.isCompleted ? (
-                            <span className="px-3 py-1.5 rounded-full bg-primary/20 border border-primary/50 text-[9px] font-bold text-primary tracking-wide uppercase flex items-center gap-1">
-                              <CheckCircle2 size={10} /> Neural Goal Met
-                            </span>
-                          ) : (
-                            <span className="px-3 py-1.5 rounded-full bg-surface-hover border border-surface-border text-[9px] font-bold text-text-muted tracking-wide uppercase">
-                              {task.allocatedHours > 2 ? 'High Intensity' : 'Standard Session'}
-                            </span>
-                          )}
+                          <span className="px-3 py-1.5 rounded-full bg-surface-hover border border-surface-border text-[9px] font-bold text-text-muted tracking-wide uppercase">
+                            {task.allocatedHours > 2 ? 'High Intensity' : 'Standard Session'}
+                          </span>
                         </div>
                       </div>
 
@@ -221,7 +222,7 @@ export default function StudyPlan() {
                         Allocated {Number(task.allocatedHours).toFixed(1)} hours of focus time based on retention algorithms and your cognitive profile.
                       </p>
 
-                      {task.aiTips && task.aiTips.length > 0 && !task.isCompleted && (
+                      {task.aiTips && task.aiTips.length > 0 && (
                         <div className="mb-8 p-6 bg-surface-sidebar rounded-2xl border border-primary/20 relative overflow-hidden group/tips">
                           <div className="absolute top-0 right-0 p-4 opacity-10 group-hover/tips:opacity-20 transition-opacity">
                             <Sparkles size={40} className="text-primary" />
@@ -240,30 +241,47 @@ export default function StudyPlan() {
                         </div>
                       )}
                       
-                      {!task.isCompleted ? (
-                        <div className="flex items-center gap-6">
-                          <button 
-                            onClick={() => handleStartFocus(task)}
-                            className="flex items-center gap-2 text-primary font-bold text-sm tracking-wide hover:text-primary-light transition-all active:scale-95 group/btn"
-                          >
-                            <Play size={16} className="fill-current group-hover/btn:scale-110 transition-transform" /> Start Focus Session
-                          </button>
-                          <button 
-                            onClick={() => handleMarkCompleted(task)}
-                            className="flex items-center gap-2 text-text-muted font-bold text-sm tracking-wide hover:text-text-main transition-all active:scale-95"
-                          >
-                            <CheckCircle2 size={16} /> Mark as Completed
-                          </button>
-                        </div>
-                      ) : (
-                        <div className="flex items-center gap-2 text-text-muted/50 font-bold text-xs tracking-widest uppercase">
-                          <Sparkles size={14} className="text-primary/40" /> Neural State Captured
-                        </div>
-                      )}
+                      <div className="flex items-center gap-6">
+                        <button 
+                          onClick={() => handleStartFocus(task)}
+                          className="flex items-center gap-2 text-primary font-bold text-sm tracking-wide hover:text-primary-light transition-all active:scale-95 group/btn"
+                        >
+                          <Play size={16} className="fill-current group-hover/btn:scale-110 transition-transform" /> Start Focus Session
+                        </button>
+                        <button 
+                          onClick={() => handleMarkCompleted(task)}
+                          className="flex items-center gap-2 text-text-muted font-bold text-sm tracking-wide hover:text-text-main transition-all active:scale-95"
+                        >
+                          <CheckCircle2 size={16} /> Mark as Completed
+                        </button>
+                      </div>
                     </div>
                   </div>
                 );
               })
+            )}
+
+            {/* Completed Tasks Summary */}
+            {!loading && todayPlan.some(t => t.isCompleted) && (
+              <div className="mt-12 pt-8 border-t border-surface-border">
+                <h4 className="text-[11px] font-bold tracking-[0.2em] text-text-muted uppercase mb-6 flex items-center gap-2 px-14">
+                  <CheckCircle2 size={14} className="text-primary" /> Captured Neural States
+                </h4>
+                <div className="space-y-4 pl-14">
+                  {todayPlan.filter(task => task.isCompleted).map((task, idx) => (
+                    <div key={`comp-${idx}`} className="bg-surface/50 border border-surface-border rounded-2xl p-6 flex justify-between items-center opacity-60 grayscale-[0.5]">
+                      <div>
+                        <h5 className="font-bold text-text-main text-lg line-through decoration-primary/50">{task.name || task.subjectName}</h5>
+                        <p className="text-[10px] text-text-muted font-bold tracking-widest uppercase">Session Synchronized</p>
+                      </div>
+                      <div className="flex items-center gap-1.5 bg-primary/10 border border-primary/20 px-3 py-1.5 rounded-full">
+                        <Sparkles size={12} className="text-primary" />
+                        <span className="text-[9px] font-bold text-primary uppercase">Optimized</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
             )}
 
             <div className="pt-8 pl-14">

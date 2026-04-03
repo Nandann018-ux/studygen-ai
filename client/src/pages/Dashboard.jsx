@@ -234,13 +234,13 @@ export default function Dashboard() {
           <div className="space-y-5 flex-1">
             {loading ? (
               <div className="text-text-muted text-sm tracking-widest uppercase">Initializing Neural Paths...</div>
-            ) : todayPlan.length === 0 ? (
+                        ) : todayPlan.filter(task => !task.isCompleted).length === 0 ? (
               <div className="bg-surface border border-surface-border rounded-[28px] p-10 text-center">
-                <span className="text-text-muted font-bold text-sm tracking-widest uppercase block mb-4">No active blocks</span>
-                <button onClick={() => navigate('/plan')} className="text-primary font-bold text-xs tracking-wider border border-primary/20 bg-primary/10 px-6 py-2.5 rounded-full uppercase transition-all hover:bg-primary/20 hover:scale-105 active:scale-95">Generate Now</button>
+                <span className="text-text-muted font-bold text-sm tracking-widest uppercase block mb-4">All Sessions Captured! 🏆</span>
+                <button onClick={() => navigate('/plan')} className="text-primary font-bold text-xs tracking-wider border border-primary/20 bg-primary/10 px-6 py-2.5 rounded-full uppercase transition-all hover:bg-primary/20 hover:scale-105 active:scale-95">Recalibrate Plan</button>
               </div>
             ) : (
-              todayPlan.slice(0, 3).map((item, idx) => {
+              todayPlan.filter(task => !task.isCompleted).slice(0, 3).map((item, idx) => {
                 const start = formatTime(currentStartHour);
                 currentStartHour += item.allocatedHours;
                 const end = formatTime(currentStartHour);

@@ -10,6 +10,7 @@ const subjectSchema = new mongoose.Schema(
     previousScore: { type: Number, default: 0 },
     hoursPerDay: { type: Number, default: 2 },
     revisionRequired: { type: Boolean, default: false },
+    isCompleted: { type: Boolean, default: false },
   },
   { timestamps: true }
 );

@@ -44,17 +44,36 @@ exports.getInsights = async (req, res) => {
         const allSubs = await Subject.find({ userId });
         const { generateStudyPlan } = require('../utils/studyPlanGenerator');
         const planData = await generateStudyPlan(allSubs);
+        const completedPlans = await StudyPlan.find({ userId, isCompleted: true });
+        console.log(`[Neural Engine] Preserving ${completedPlans.length} completed plan items during optimization.`);
+        await StudyPlan.deleteMany({ userId, isCompleted: false });
         
-        await StudyPlan.deleteMany({ userId });
-        const plansToSave = planData.map(item => ({
-            userId,
-            subjectId: item.subjectId,
-            name: item.name || item.subjectName,
-            allocatedHours: Number(item.allocatedHours),
-            reasons: item.reasons,
-            date: item.date
-        }));
-        await StudyPlan.insertMany(plansToSave);
+        const completedKeys = new Set(
+          completedPlans.map(p => {
+            const dateStr = p.date ? p.date.toISOString().split('T')[0] : '';
+            return `${p.subjectId}_${dateStr}`;
+          })
+        );
+        
+        const plansToSave = planData
+            .filter(item => {
+              const dateStr = typeof item.date === 'string'
+                ? item.date.split('T')[0]
+                : new Date(item.date).toISOString().split('T')[0];
+              const key = `${item.subjectId}_${dateStr}`;
+              return !completedKeys.has(key);
+            })
+            .map(item => ({
+              userId,
+              subjectId: item.subjectId,
+              name: item.name || item.subjectName,
+              allocatedHours: Number(item.allocatedHours),
+              reasons: item.reasons,
+              date: item.date
+            }));
+        if (plansToSave.length > 0) {
+          await StudyPlan.insertMany(plansToSave);
+        }
     }
 
     res.json({
