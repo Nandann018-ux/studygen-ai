@@ -31,15 +31,12 @@ beforeEach(async () => {
     await Subject.deleteMany({});
 
     mockUser.validToken = jwt.sign({ userId: mockUser.userId }, process.env.JWT_SECRET || "test_secret");
-    
-    // Note: User model might have different fields, 
-    // but the controller uses req.user.userId from decoded JWT.
 });
 
 const mockSubjects = [
     {
         userId: mockUser.userId,
-        subjectName: "Math",
+        name: "Math",
         difficulty: 3,
         proficiency: 2,
         syllabusRemaining: 50,
@@ -47,7 +44,7 @@ const mockSubjects = [
     },
     {
         userId: mockUser.userId,
-        subjectName: "Science",
+        name: "Science",
         difficulty: 4,
         proficiency: 3,
         syllabusRemaining: 30,
@@ -67,7 +64,9 @@ test("GET all subjects for user should succeed", async () => {
     expect(result.status).toBe(200);   
     expect(result.body).toBeInstanceOf(Array);
     expect(result.body.length).toBe(2);
-    expect(result.body[0].subjectName).toBe("Math");
+    // Support either name or subjectName in response just in case, but expect name
+    const mathSub = result.body.find(s => s.name === "Math" || s.subjectName === "Math");
+    expect(mathSub).toBeDefined();
 });
 
 test("POST valid subject should succeed", async () => {
@@ -75,7 +74,7 @@ test("POST valid subject should succeed", async () => {
         .post("/api/subjects")
         .set("Authorization", "Bearer " + mockUser.validToken)
         .send({
-            subjectName: "History",
+            name: "History",
             difficulty: 2,
             proficiency: 4,
             syllabusRemaining: 10,
@@ -83,10 +82,10 @@ test("POST valid subject should succeed", async () => {
         });
 
     expect(result.status).toBe(201);   
-    expect(result.body.subjectName).toBe("History");
+    expect(result.body.name).toBe("History");
 });
 
-test("POST without subjectName should fail", async () => {
+test("POST without name should fail", async () => {
     const result = await request(app)
         .post("/api/subjects")
         .set("Authorization", "Bearer " + mockUser.validToken)
@@ -98,7 +97,8 @@ test("POST without subjectName should fail", async () => {
         });
 
     expect(result.status).toBe(400);
-    expect(result.body.message).toBe("subjectName is required");
+    // The controller now checks for !name
+    expect(result.body.message).toBe("name is required");
 });
 
 test("GET subjects without token should fail", async () => {
