@@ -27,7 +27,7 @@ export default function Sidebar({ className }) {
         className="p-8 pb-6 flex flex-col gap-1 tracking-tight group hover:scale-[1.02] active:scale-95 transition-all"
       >
         <h1 className="text-xl font-bold leading-none">
-          <span className="text-text-muted font-medium group-hover:text-primary transition-colors">StudyGenAI</span><br/>
+          <span className="text-text-muted font-medium group-hover:text-primary transition-colors">StudyGen AI</span><br/>
         </h1>
         <span className="text-[9px] font-bold text-text-muted tracking-[0.2em] uppercase mt-2 group-hover:text-primary/60 transition-colors">
           AI-Powered Study Optimization
