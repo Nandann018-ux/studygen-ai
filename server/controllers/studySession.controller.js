@@ -5,7 +5,7 @@ async function saveSession(req, res) {
   try {
     const { subjectId, name, subjectName, plannedHours, actualHours, completion, date, planId } = req.body;
     
-    // Support both 'name' and 'subjectName' for transition period, then use 'name'
+    
     const finalName = name || subjectName;
 
     if (!subjectId || !finalName || plannedHours === undefined || actualHours === undefined) {
@@ -22,13 +22,13 @@ async function saveSession(req, res) {
       date: date || new Date(),
     });
 
-    // Mark the corresponding study plan entry as completed if planId is provided
+    
     if (planId) {
       console.log(`[Session] Marking StudyPlan ${planId} as completed.`);
       await StudyPlan.findByIdAndUpdate(planId, { isCompleted: true });
     }
 
-    // --- Automatic ML Retrain Trigger ---
+    
     try {
       const { triggerAutoRetrain } = require('../services/mlService');
       if (triggerAutoRetrain) triggerAutoRetrain();

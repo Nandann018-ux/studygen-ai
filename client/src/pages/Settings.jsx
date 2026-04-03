@@ -12,7 +12,7 @@ export default function Settings() {
   const { user, updateUser } = useUser();
   const [saving, setSaving] = useState(false);
 
-  // Update active tab if navigation state changes
+  
   useEffect(() => {
     if (location.state?.tab) {
       setActiveTab(location.state.tab);
@@ -34,7 +34,7 @@ export default function Settings() {
         avatar: user.avatar
       });
       
-      // Context already handles localStorage sync via updateUser
+      
       alert('Neural synchronization successful.');
     } catch (err) {
       console.error('Adjustment failed:', err);

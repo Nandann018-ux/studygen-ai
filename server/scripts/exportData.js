@@ -25,7 +25,7 @@ async function exportToCSV() {
       const sub = s.subjectId;
       if (!sub) return null;
       
-      // Calculate daysLeft (mock for now if not in Subject, or use real if available)
+      
       const daysLeft = sub.examDate ? Math.max(0, Math.ceil((new Date(sub.examDate) - new Date()) / (1000 * 60 * 60 * 24))) : 30;
       
       return [
@@ -38,7 +38,7 @@ async function exportToCSV() {
 
     const csvContent = [headers.join(','), ...rows].join('\n');
     
-    // Ensure directory exists
+    
     const dir = path.dirname(EXPORT_PATH);
     if (!fs.existsSync(dir)){
         fs.mkdirSync(dir, { recursive: true });

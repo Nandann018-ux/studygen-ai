@@ -18,9 +18,9 @@ export default function StudyPlan() {
   const fetchPlan = async () => {
     try {
       const response = await api.get('/plans');
-      // For the first couple of tasks, fetch AI tips
+      
       const planWithTips = await Promise.all(response.data.map(async (task, i) => {
-        if (i < 3) { // Only fetch tips for the next 3 tasks to save resources
+        if (i < 3) { 
           try {
             const currentDiff = (task.difficulty !== undefined && task.difficulty !== null) ? task.difficulty : 3;
             const tipsRes = await api.post('/ml/tips', { name: task.name || task.subjectName, difficulty: currentDiff });

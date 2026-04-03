@@ -46,13 +46,13 @@ export default function Analytics() {
         setPlan(planRes.data);
         setInsights(insightsRes.data);
 
-        // Fetch predicted score for the weakest subject
+        
         if (subs.length > 0) {
           const weakestSubject = [...subs].sort((a, b) => b.syllabusRemaining - a.syllabusRemaining)[0];
           const scoreRes = await api.post('/ml/predict-score', weakestSubject);
           setPredictedScore(scoreRes.data.predictedScore);
           
-          // Neural Integration: Fetch Study Tips for the weakest node
+          
           setTipsLoading(true);
           try {
             const tipsRes = await api.post('/ml/tips', {
@@ -75,21 +75,21 @@ export default function Analytics() {
     fetchAnalyticsData();
   }, []);
 
-  // -- Derived Data Calculations --
+  
 
-  // Weakest subject (highest syllabus remaining or lowest proficiency)
+  
   const sortedByNeeds = [...subjects].sort((a, b) => b.syllabusRemaining - a.syllabusRemaining);
   const weakestSubjectName = sortedByNeeds.length > 0 ? (sortedByNeeds[0].name || sortedByNeeds[0].subjectName) : 'None';
   const weakestSyllabus = sortedByNeeds.length > 0 ? sortedByNeeds[0].syllabusRemaining : 0;
 
-  // Study Allocations aggregated by Subject
+  
   const allocationsMap = {};
   plan.forEach(item => {
     const name = item.name || item.subjectName;
     allocationsMap[name] = (allocationsMap[name] || 0) + item.allocatedHours;
   });
   
-  // Sort allocations descending
+  
   let sortedAllocations = Object.entries(allocationsMap)
     .sort((a, b) => b[1] - a[1])
     .map(([name, hours]) => ({ name, hours }));
@@ -98,7 +98,7 @@ export default function Analytics() {
 
   const totalAllocated = plan.reduce((acc, curr) => acc + curr.allocatedHours, 0) || 1;
   
-  // High Intensity vs Standard (Doughnut data proxy) - Real deep work is > 3h
+  
   const highIntensityHours = plan.filter(p => p.allocatedHours >= 3).reduce((acc, curr) => acc + curr.allocatedHours, 0);
   const deepFlowPct = plan.length > 0 ? Math.round((highIntensityHours / totalAllocated) * 100) : 0;
 
@@ -328,10 +328,10 @@ export default function Analytics() {
           
           <div className="bg-surface-sidebar/40 backdrop-blur-2xl rounded-[38px] p-10 h-full flex flex-col md:flex-row items-center justify-between gap-12 border border-surface-border relative z-10">
             <div className="w-64 h-64 relative shrink-0 flex items-center justify-center">
-               {/* Background Orbit */}
+               {}
                <div className="absolute inset-4 rounded-full border border-surface-border bg-gradient-to-b from-transparent to-surface-hover/20 shadow-inner"></div>
                
-               {/* The Neural Core (Chart) */}
+               {}
                <div className="w-full h-full p-2 relative z-10">
                  <Doughnut data={doughnutData} options={{ 
                    responsive: true, 
@@ -347,13 +347,13 @@ export default function Analytics() {
                  }} />
                </div>
 
-               {/* Central Readout */}
+               {}
                <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none z-20">
                  <span className="text-[52px] font-bold text-text-main tracking-tighter leading-none mb-1 drop-shadow-[0_10_20px_rgba(0,208,132,0.2)]">{deepFlowPct}%</span>
                  <span className="text-[9px] font-bold tracking-[0.4em] text-primary uppercase opacity-80 pl-[0.4em]">Deep Flow</span>
                </div>
                
-               {/* Status Beacon */}
+               {}
                <div className="absolute top-10 left-10 w-2 h-2 rounded-full bg-primary shadow-[0_0_20px_rgba(0,208,132,1)] animate-pulse z-30"></div>
             </div>
   

@@ -64,7 +64,7 @@ test("GET all subjects for user should succeed", async () => {
     expect(result.status).toBe(200);   
     expect(result.body).toBeInstanceOf(Array);
     expect(result.body.length).toBe(2);
-    // Support either name or subjectName in response just in case, but expect name
+    
     const mathSub = result.body.find(s => s.name === "Math" || s.subjectName === "Math");
     expect(mathSub).toBeDefined();
 });
@@ -97,7 +97,7 @@ test("POST without name should fail", async () => {
         });
 
     expect(result.status).toBe(400);
-    // The controller now checks for !name
+    
     expect(result.body.message).toBe("name is required");
 });
 

@@ -21,7 +21,7 @@ export default function Sidebar({ className }) {
 
   return (
     <aside className={`flex flex-col ${className}`}>
-      {/* ... existing logo and menu ... */}
+      {}
       <div className="p-8 pb-6 flex flex-col gap-1 tracking-tight">
         <h1 className="text-xl font-bold leading-none">
           <span className="text-text-muted font-medium">StudyGenAI</span><br/>

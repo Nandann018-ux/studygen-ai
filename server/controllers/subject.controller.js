@@ -88,14 +88,14 @@ async function deleteSubject(req, res) {
   try {
     const { id } = req.params;
     
-    // Cascading delete: Remove the subject and all its related plans/sessions
+    
     const deletedSubject = await Subject.findOneAndDelete({ _id: id, userId: req.user.userId });
 
     if (!deletedSubject) {
       return res.status(404).json({ message: 'Subject not found or unauthorized' });
     }
 
-    // Purge orphaned study data tied to this subject node
+    
     await StudyPlan.deleteMany({ subjectId: id, userId: req.user.userId });
     await StudySession.deleteMany({ subjectId: id, userId: req.user.userId });
 

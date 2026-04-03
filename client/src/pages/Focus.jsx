@@ -7,11 +7,11 @@ export default function Focus() {
   const navigate = useNavigate();
   const subject = location.state?.subject || { name: 'General Focus', subjectName: 'General Focus', reasons: ['Deep work session'] };
 
-  const [timeLeft, setTimeLeft] = useState(25 * 60); // 25 minutes default
+  const [timeLeft, setTimeLeft] = useState(25 * 60); 
   const [isActive, setIsActive] = useState(false);
-  const [sessionType, setSessionType] = useState('focus'); // 'focus' or 'break'
+  const [sessionType, setSessionType] = useState('focus'); 
   
-  // Timer sync engine
+  
   useEffect(() => {
     let interval = null;
     if (isActive && timeLeft > 0) {
@@ -52,7 +52,7 @@ export default function Focus() {
   };
 
   const totalTime = sessionType === 'focus' ? 25 * 60 : 5 * 60;
-  // Precision math for the radial progress
+  
   const radius = 90;
   const circumference = 2 * Math.PI * radius;
   const progress = ((totalTime - timeLeft) / totalTime) * 100;
@@ -84,7 +84,7 @@ export default function Focus() {
         <div className="absolute inset-0 bg-gradient-to-b from-primary/5 to-transparent opacity-50"></div>
         
         <div className="bg-surface rounded-[52px] p-20 flex flex-col items-center relative z-10 w-[440px]">
-           {/* Mathematical Precision SVG Timer */}
+           {}
            <svg viewBox="0 0 200 200" className="absolute inset-4 -rotate-90 w-[calc(100%-32px)] h-[calc(100%-32px)] drop-shadow-2xl">
              <circle 
                cx="100" 

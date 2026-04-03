@@ -3,15 +3,13 @@ const path = require('path');
 const StudySession = require('../models/StudySession');
 const Subject = require('../models/Subject');
 
-/**
- * Helper to run the Python AI script for a specific task.
- */
+
 function runAIScript(task, params) {
   return new Promise((resolve) => {
     const scriptPath = path.join(__dirname, '..', '..', 'ml-service', 'predict.py');
     const args = [scriptPath, '--task', task];
 
-    // Map parameters to CLI flags
+    
     if (params.difficulty !== undefined) args.push('--difficulty', params.difficulty.toString());
     if (params.proficiency !== undefined) args.push('--proficiency', params.proficiency.toString());
     if (params.syllabusRemaining !== undefined) args.push('--syllabus', params.syllabusRemaining.toString());
@@ -51,9 +49,7 @@ function runAIScript(task, params) {
   });
 }
 
-/**
- * Heuristic fallback predictor (deterministic rule-based logic).
- */
+
 function fallbackPredictor({ difficulty, syllabusRemaining, daysLeft }) {
   try {
     const complexityWeight = (difficulty / 5) * 2.0 + 1.0;
@@ -67,9 +63,7 @@ function fallbackPredictor({ difficulty, syllabusRemaining, daysLeft }) {
   }
 }
 
-/**
- * Generates human-readable reasoning for the ML prediction.
- */
+
 function generateReasoning({ difficulty, syllabusRemaining, daysLeft, consistencyScore, pastAvgHours }) {
   const reasons = [];
   if (difficulty >= 4) reasons.push("Prioritizing due to high subject complexity");
@@ -82,9 +76,7 @@ function generateReasoning({ difficulty, syllabusRemaining, daysLeft, consistenc
   return reasons.slice(0, 3);
 }
 
-/**
- * ML predictor for study hours.
- */
+
 async function predictStudyHours({ userId, subjectId, difficulty, syllabusRemaining, daysLeft }) {
   const safeDifficulty = (difficulty !== undefined && difficulty !== null) ? Number(difficulty) : 3;
   const safeSyllabus = (syllabusRemaining !== undefined && syllabusRemaining !== null) ? Number(syllabusRemaining) : 0;
@@ -141,9 +133,7 @@ async function predictStudyHours({ userId, subjectId, difficulty, syllabusRemain
   };
 }
 
-/**
- * Subject Level Classification (Weak/Medium/Strong)
- */
+
 async function classifySubject(subjectData) {
   const result = await runAIScript('classify', subjectData);
   if (result.fallback || !result.level) {
@@ -151,7 +141,7 @@ async function classifySubject(subjectData) {
     const diff = Number(subjectData.difficulty || 3);
     const prevScore = Number(subjectData.previousScore || 0);
 
-    // Neural mastery logic: High proficiency (4+) combined with strong past scores (80+) overcomes difficulty
+    
     if (prof >= 4 && prevScore >= 80) return "Strong";
     if (prof >= 4 || prevScore >= 85) return "Strong";
     
@@ -164,9 +154,7 @@ async function classifySubject(subjectData) {
   return result.level;
 }
 
-/**
- * Predicted Exam Score
- */
+
 async function predictExamScore(subjectData) {
   const result = await runAIScript('score', subjectData);
   if (result.fallback || result.predictedScore === undefined) {
@@ -174,7 +162,7 @@ async function predictExamScore(subjectData) {
     const diff = Number(subjectData.difficulty || 3);
     const prevScore = Number(subjectData.previousScore || 0);
     
-    // Baseline is derived from previous score if available, otherwise heuristic
+    
     const baseline = prevScore > 0 ? prevScore : 70;
     const diffMod = (prof - diff) * 4;
     const loadMod = (Number(subjectData.syllabusRemaining || 0) / 100) * -5;
@@ -184,9 +172,7 @@ async function predictExamScore(subjectData) {
   return result.predictedScore;
 }
 
-/**
- * Generate AI-based study tips using NLP
- */
+
 async function generateAITips(name, difficulty) {
   const result = await runAIScript('tips', { name, difficulty });
   if (result.fallback || !result.tips) {
@@ -199,9 +185,7 @@ async function generateAITips(name, difficulty) {
   return result.tips;
 }
 
-/**
- * Calculates long-term user performance insights.
- */
+
 async function getUserInsights(userId) {
   const defaultInsights = {
     strongest: "N/A",
@@ -215,7 +199,7 @@ async function getUserInsights(userId) {
   try {
     const sessions = await StudySession.find({ userId }).sort({ date: 1 }).lean();
     
-    // Proactive Fallback: If no sessions, find the "Weakest" based on difficulty
+    
     if (sessions.length === 0) {
       const allSubjects = await Subject.find({ userId }).lean();
       if (allSubjects.length > 0) {
@@ -262,7 +246,7 @@ async function getUserInsights(userId) {
        const p = (s.proficiency !== undefined && s.proficiency !== null) ? Number(s.proficiency) : 3;
        subjectStats[s._id] = { 
           name: s.name || s.subjectName || "Unknown",
-          score: (p - d), // Baseline -4 to +4
+          score: (p - d), 
           sessions: 0 
        };
     });
@@ -277,7 +261,7 @@ async function getUserInsights(userId) {
 
     const sorted = Object.values(subjectStats).sort((a, b) => b.score - a.score);
     
-    // Aggregation for chart (Daily planned vs actual)
+    
     const dailyMap = {};
     sessions.slice(-7).forEach(s => {
        const day = s.date.toISOString().split('T')[0];

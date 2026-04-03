@@ -71,12 +71,12 @@ export default function Auth() {
           </p>
         </div>
 
-        {/* Abstract background elements */}
+        {}
         <div className="absolute top-1/2 left-1/2 -translate-x-1/4 -translate-y-1/2 w-[800px] h-[800px] border-[40px] border-white/20 rounded-full blur-2xl pointer-events-none opacity-40 mix-blend-overlay"></div>
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-[300px] font-bold text-white/10 select-none pointer-events-none tracking-tighter mix-blend-overlay">AI</div>
       </div>
 
-      {/* Auth form side */}
+      {}
       <div className="w-full lg:w-1/2 flex items-center justify-center p-8 bg-surface-sidebar transition-colors duration-300">
         <div className="w-full max-w-md bg-surface p-10 rounded-[32px] shadow-xl shadow-black/5 border border-surface-border transition-colors duration-300">
           <div className="text-center mb-10">

@@ -19,10 +19,10 @@ async function generatePlan(req, res) {
       return res.status(500).json({ message: "Neural engine failed to allocate time. Please try adding more subjects." });
     }
 
-    // Clear existing plan
+    
     await StudyPlan.deleteMany({ userId: req.user.userId });
     
-    // Process and save the new plan
+    
     const plansToSave = planData.map((item) => ({
       userId: req.user.userId,
       subjectId: item.subjectId,

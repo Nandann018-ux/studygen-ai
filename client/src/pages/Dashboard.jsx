@@ -35,7 +35,7 @@ export default function Dashboard() {
   const [showSubjectModal, setShowSubjectModal] = useState(false);
 
   useEffect(() => {
-    // Get user name from storage
+    
     const userData = localStorage.getItem('studygen_user');
     if (userData) {
       try {
@@ -73,7 +73,7 @@ export default function Dashboard() {
     .reduce((acc, p) => acc + Number(p.allocatedHours), 0)
     .toFixed(1);
 
-  // Auto-generate plan if subjects exist but no plan for today
+  
   useEffect(() => {
     if (!loading && subjects.length > 0 && todayPlan.length === 0) {
       console.log("[Neural Engine] Subjects detected but no active plan. Suggesting initialization.");

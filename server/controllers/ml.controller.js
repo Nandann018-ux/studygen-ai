@@ -9,9 +9,7 @@ const Subject = require('../models/Subject');
 const StudyPlan = require('../models/StudyPlan');
 const StudySession = require('../models/StudySession');
 
-/**
- * Manually trigger the ML Model retraining pipeline.
- */
+
 exports.retrainModel = async (req, res) => {
   try {
     const result = await runRetrainPipeline();
@@ -21,19 +19,17 @@ exports.retrainModel = async (req, res) => {
   }
 };
 
-/**
- * Fetch ML-driven user insights and performance trends.
- */
+
 exports.getInsights = async (req, res) => {
   try {
     const userId = req.user.userId;
     
-    // Fetch direct insights from ML service
+    
     const insights = await getUserInsights(userId);
     
     const subjectCount = await Subject.countDocuments({ userId });
     
-    // Safety Purge: If laboratory is empty, ensure all 'ghost' data is destroyed
+    
     if (subjectCount === 0) {
         await StudyPlan.deleteMany({ userId });
         await StudySession.deleteMany({ userId });
@@ -70,9 +66,7 @@ exports.getInsights = async (req, res) => {
   }
 };
 
-/**
- * Get subject classification (Weak/Medium/Strong)
- */
+
 exports.getClassification = async (req, res) => {
   try {
     const level = await classifySubject(req.body);
@@ -82,9 +76,7 @@ exports.getClassification = async (req, res) => {
   }
 };
 
-/**
- * Get predicted exam score
- */
+
 exports.getScorePrediction = async (req, res) => {
   try {
     const score = await predictExamScore(req.body);
@@ -94,9 +86,7 @@ exports.getScorePrediction = async (req, res) => {
   }
 };
 
-/**
- * Get AI Study Tips
- */
+
 exports.getStudyTips = async (req, res) => {
   try {
     const { name, subjectName, difficulty } = req.body;

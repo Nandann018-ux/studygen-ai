@@ -19,9 +19,7 @@ app.use((req, res) => {
   res.status(404).json({ success: false, message: 'Endpoint Not Found' });
 });
 
-/**
- * Global Error Handler: Prevents server crashes and silent failures.
- */
+
 app.use((err, req, res, next) => {
   console.error('\x1b[31m%s\x1b[0m', '!! Neural Server Error:', err.message);
   console.error(err.stack);

@@ -6,10 +6,10 @@ from pymongo import MongoClient
 from dotenv import load_dotenv
 from datetime import datetime, timezone
 
-# Load environment variables
-load_dotenv() # Check root
+
+load_dotenv() 
 if not os.getenv('MONGO_URI'):
-    # Check server directory
+    
     server_env = os.path.join(os.path.dirname(__file__), '..', 'server', '.env')
     load_dotenv(server_env)
 
@@ -41,14 +41,14 @@ def update_dataset():
         client = MongoClient(MONGO_URI)
         db = client.get_default_database()
         
-        # Collections
+        
         sessions_col = db['studysessions']
         subjects_col = db['subjects']
         
         last_sync = get_last_sync_time()
         print(f"Fetching updates since {datetime.fromtimestamp(last_sync/1000, tz=timezone.utc) if last_sync else 'beginning'}...")
         
-        # 1. Fetch only new sessions
+        
         new_sessions = list(sessions_col.find({"createdAt": {"$gt": datetime.fromtimestamp(last_sync/1000, tz=timezone.utc)}}))
         
         if not new_sessions:
@@ -66,25 +66,25 @@ def update_dataset():
             user_id = session['userId']
             subject_id = session['subjectId']
             
-            # --- Advanced Feature Engineering ---
             
-            # A. consistencyScore (Global user ratio)
+            
+            
             user_history = list(sessions_col.find({"userId": user_id, "createdAt": {"$lt": session['createdAt']}}))
             if user_history:
                 total_planned = sum(s.get('plannedHours', 0) for s in user_history)
                 total_actual = sum(s.get('actualHours', 0) for s in user_history)
                 consistency_score = (total_actual / total_planned) if total_planned > 0 else 1.0
             else:
-                consistency_score = 1.0 # Default for first session
+                consistency_score = 1.0 
                 
-            # B. pastAvgHours (Subject specific)
+            
             subject_history = list(sessions_col.find({"userId": user_id, "subjectId": subject_id, "createdAt": {"$lt": session['createdAt']}}))
             if subject_history:
                 past_avg_hours = sum(s.get('actualHours', 0) for s in subject_history) / len(subject_history)
             else:
-                past_avg_hours = session.get('plannedHours', 2.0) # Fallback to current plan
+                past_avg_hours = session.get('plannedHours', 2.0) 
             
-            # --- Core Features ---
+            
             difficulty = subject.get('difficulty', 3)
             syllabus_rem = subject.get('syllabusRemaining', 0)
             proficiency = subject.get('proficiency', 3)
@@ -92,16 +92,16 @@ def update_dataset():
             hours_per_day = subject.get('hoursPerDay', 2)
             rev_req = 1 if subject.get('revisionRequired', False) else 0
             
-            # Calculate daysLeft at time of session
+            
             session_date = session.get('date', datetime.now())
             exam_date = subject.get('examDate')
             
             if exam_date:
-                # Ensure exam_date is datetime
+                
                 if isinstance(exam_date, str):
                     exam_date = datetime.fromisoformat(exam_date.replace('Z', '+00:00'))
                 
-                # Make session_date aware if it's naive to avoid comparison error
+                
                 if session_date.tzinfo is None:
                     session_date = session_date.replace(tzinfo=timezone.utc)
                 if exam_date.tzinfo is None:
@@ -130,7 +130,7 @@ def update_dataset():
                 'is_real_data': 1
             })
             
-            # Update max timestamp tracker
+            
             created_at_ts = int(session['createdAt'].replace(tzinfo=timezone.utc).timestamp() * 1000)
             if created_at_ts > max_ts:
                 max_ts = created_at_ts
@@ -139,13 +139,13 @@ def update_dataset():
             print("No valid new session data processed.")
             return
 
-        # Load existing data
+        
         if os.path.exists(CSV_PATH):
             df_old = pd.read_csv(CSV_PATH)
         else:
             df_old = pd.DataFrame(columns=['difficulty', 'syllabusRemaining', 'daysLeft', 'actualHours', 'completion', 'consistencyScore', 'pastAvgHours', 'is_real_data'])
 
-        # Align columns
+        
         df_new = pd.DataFrame(new_rows)
         for col in df_old.columns:
             if col not in df_new.columns:
@@ -154,7 +154,7 @@ def update_dataset():
         df_final = pd.concat([df_old, df_new], ignore_index=True)
         df_final.to_csv(CSV_PATH, index=False)
         
-        # 4. Save metadata
+        
         save_sync_time(max_ts)
         
         print(f"Dataset updated successfully. Appended {len(new_rows)} new real sessions.")

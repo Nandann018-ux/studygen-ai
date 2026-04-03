@@ -28,11 +28,11 @@ def main():
     try:
         args = get_args()
         
-        # Feature Engineering (consistent with training)
+        
         urgency = args.syllabus / args.days if args.days > 0 else args.syllabus
         
-        # Prepare feature vector for models
-        # features = ['difficulty', 'proficiency', 'syllabusRemaining', 'daysLeft', 'urgency', 'consistencyScore', 'pastAvgHours']
+        
+        
         df = pd.DataFrame([{
             'difficulty': args.difficulty,
             'proficiency': args.proficiency,
@@ -51,7 +51,7 @@ def main():
                 pred = model.predict(df)[0]
                 result = {"predictedHours": float(round(pred, 1))}
             else:
-                # Heuristic fallback
+                
                 comp_weight = (args.difficulty / 5) * 1.5 + 1
                 result = {"predictedHours": float(round(comp_weight * (args.syllabus/20 + 1), 1))}
 
@@ -76,7 +76,7 @@ def main():
                 result = {"predictedScore": float(round(min(100, max(0, baseline)), 1))}
 
         elif args.task == 'tips':
-            # Smart Heuristic Tips (High speed, diverse output)
+            
             if args.difficulty >= 4:
                 tips = [
                     f"Break {args.subject} into tight 25-minute Pomodoro sprints.",

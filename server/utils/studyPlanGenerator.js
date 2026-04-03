@@ -1,11 +1,6 @@
 const { predictStudyHours } = require('../services/mlService');
 
-/**
- * Hardened Generation Logic:
- * 1. Ensures every subject has at least 1 session on Day 1.
- * 2. Removes strict exam-date filtering for the current day.
- * 3. Implements rule-based fallback if ML predictions are inconsistent.
- */
+
 async function generateStudyPlan(subjects, daysToPlan = 7) {
   const plan = [];
   const startOfDay = new Date();
@@ -19,7 +14,7 @@ async function generateStudyPlan(subjects, daysToPlan = 7) {
     const currentDate = new Date(startOfDay);
     currentDate.setDate(startOfDay.getDate() + dayOffset);
 
-    // Relaxed filtering: Include if exam is in the future OR there is syllabus remaining
+    
     const validSubjects = subjects.filter((sub) => {
       if (!sub.examDate) return (sub.syllabusRemaining > 0);
       const examDate = new Date(sub.examDate);
@@ -59,7 +54,7 @@ async function generateStudyPlan(subjects, daysToPlan = 7) {
           };
         }
 
-        // Apply "Always-on" Neural Weighting to prevent identical 2.0h/2.5h patterns
+        
         const currentDiff = (sub.difficulty !== undefined && sub.difficulty !== null) ? sub.difficulty : 3;
         const priorityWeight = currentDiff / 3; 
         const weightedHours = result.predictedHours * priorityWeight;
@@ -68,7 +63,7 @@ async function generateStudyPlan(subjects, daysToPlan = 7) {
         
         return {
           subjectId: sub._id,
-          subjectName: sub.name || sub.subjectName, // Keep subjectName for plan model compatibility if needed, but prioritize 'name'
+          subjectName: sub.name || sub.subjectName, 
           allocatedHours,
           reasons: result.reasons,
           date: currentDate.toISOString().split('T')[0],
@@ -76,7 +71,7 @@ async function generateStudyPlan(subjects, daysToPlan = 7) {
       })
     );
 
-    // DAILY CEILING: Ensure total study hours per day <= 10 hours
+    
     const DAILY_CEILING = 10;
     const totalHoursForDay = dayPredictions.reduce((acc, curr) => acc + curr.allocatedHours, 0);
 

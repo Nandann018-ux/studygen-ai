@@ -9,7 +9,7 @@ export default function Subjects() {
   const [isEditing, setIsEditing] = useState(false);
   const [editId, setEditId] = useState(null);
   
-  // Predefined Neural Dataset for optimal AI classification
+  
   const subjectDataset = [
     "Data Structures & Algorithms",
     "Web Architecture",
@@ -49,7 +49,7 @@ export default function Subjects() {
   const fetchSubjects = async () => {
     try {
       const response = await api.get('/subjects');
-      // For each subject, fetch its AI-driven "Level"
+      
       const subjectsWithLevel = await Promise.all(response.data.map(async (sub) => {
         try {
           const levelRes = await api.post('/ml/classify', sub);
@@ -237,7 +237,7 @@ export default function Subjects() {
         </div>
       )}
 
-      {/* Modal Section */}
+      {}
       {isModalOpen && (
         <div className="fixed inset-0 bg-[#0a0b10]/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-in fade-in zoom-in-95 duration-200">
           <div className="bg-surface border border-surface-border rounded-[32px] p-10 w-full max-w-2xl shadow-2xl relative max-h-[90vh] overflow-y-auto">
