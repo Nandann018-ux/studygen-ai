@@ -5,7 +5,7 @@ import { Play, Pause, RotateCcw, Brain, CheckCircle2, ChevronLeft, Sparkles, Tim
 export default function Focus() {
   const location = useLocation();
   const navigate = useNavigate();
-  const subject = location.state?.subject || { subjectName: 'General Focus', reasons: ['Deep work session'] };
+  const subject = location.state?.subject || { name: 'General Focus', subjectName: 'General Focus', reasons: ['Deep work session'] };
 
   const [timeLeft, setTimeLeft] = useState(25 * 60); // 25 minutes default
   const [isActive, setIsActive] = useState(false);
@@ -69,7 +69,7 @@ export default function Focus() {
 
       <div className="text-center mb-10">
         <h1 className="text-4xl font-bold text-text-main tracking-tight mb-4">
-          Focus Session: <span className="text-primary">{subject.subjectName}</span>
+          Focus Session: <span className="text-primary">{subject.name || subject.subjectName}</span>
         </h1>
         <div className="flex justify-center gap-2">
           {subject.reasons?.map((reason, idx) => (
