@@ -7,7 +7,10 @@ const planRoutes = require('./routes/plan.routes');
 const sessionRoutes = require('./routes/studySession.routes');
 const mlRoutes = require('./routes/ml.routes');
 const app = express();
-app.use(cors());
+const allowedOrigins = process.env.CLIENT_ORIGIN
+  ? process.env.CLIENT_ORIGIN.split(',').map(o => o.trim())
+  : true; 
+app.use(cors({ origin: allowedOrigins, credentials: true }));
 app.use(express.json());
 app.use('/api/health', healthRoutes);
 app.use('/api/auth', authRoutes);
