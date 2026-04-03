@@ -1,29 +1,23 @@
 import React, { useState, useEffect } from 'react';
-import { Search, Brain, Monitor, Target, Link as LinkIcon, Lock, Moon, Sun, Clock, Volume2, LogOut, User, Save } from 'lucide-react';
+import { Search, Brain, Monitor, Target, Link as LinkIcon, Lock, Moon, Sun, Clock, Volume2, LogOut, User, Save, Sparkles, Check } from 'lucide-react';
 import { useTheme } from '../context/ThemeContext';
+import { useUser } from '../context/UserContext';
+import { useLocation } from 'react-router-dom';
 import api from '../services/api';
 
 export default function Settings() {
-  const [activeTab, setActiveTab] = useState('interface');
+  const location = useLocation();
+  const [activeTab, setActiveTab] = useState(location.state?.tab || 'profile');
   const { theme, toggleTheme } = useTheme();
-  const [user, setUser] = useState({ name: '', email: '', dailyStudyHours: 4 });
-  const [loading, setLoading] = useState(false);
+  const { user, updateUser } = useUser();
   const [saving, setSaving] = useState(false);
 
+  // Update active tab if navigation state changes
   useEffect(() => {
-    const fetchProfile = async () => {
-      setLoading(true);
-      try {
-        const response = await api.get('/auth/me');
-        setUser(response.data);
-      } catch (err) {
-        console.error('Failed to fetch profile:', err);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchProfile();
-  }, []);
+    if (location.state?.tab) {
+      setActiveTab(location.state.tab);
+    }
+  }, [location.state]);
 
   const handleLogout = () => {
     localStorage.removeItem('studygen_token');
@@ -34,14 +28,17 @@ export default function Settings() {
   const handleSave = async () => {
     setSaving(true);
     try {
-      await api.put('/auth/profile', {
+      const response = await api.put('/auth/profile', {
         name: user.name,
-        dailyStudyHours: user.dailyStudyHours
+        dailyStudyHours: user.dailyStudyHours,
+        avatar: user.avatar
       });
-      alert('Settings saved successfully!');
+      
+      // Context already handles localStorage sync via updateUser
+      alert('Neural synchronization successful.');
     } catch (err) {
-      console.error('Failed to save settings:', err);
-      alert('Error saving settings.');
+      console.error('Adjustment failed:', err);
+      alert('Recalibration error. Please check neural link.');
     } finally {
       setSaving(false);
     }
@@ -104,6 +101,39 @@ export default function Settings() {
               <div className="bg-surface rounded-[32px] p-8 md:p-10 border border-surface-border shadow-sm">
                 <div className="flex items-center gap-3 mb-8">
                   <div className="w-2 h-6 bg-primary rounded-full"></div>
+                  <h2 className="text-xl font-bold text-text-main tracking-tight">Neural Identity</h2>
+                </div>
+
+                <div className="mb-10">
+                  <label className="block text-sm font-bold text-text-main mb-6">Choose your Persona</label>
+                  <div className="grid grid-cols-4 md:grid-cols-8 gap-4">
+                    {['Julian', 'Lex', 'Nova', 'Cosmos', 'Astra', 'Luna', 'Zero', 'One'].map((seed) => {
+                      const avatarUrl = `https://api.dicebear.com/7.x/pixel-art/svg?seed=${seed}`;
+                      const isSelected = user.avatar === avatarUrl;
+                      return (
+                        <button
+                          key={seed}
+                          onClick={() => updateUser({ avatar: avatarUrl })}
+                          className={`relative w-full aspect-square rounded-2xl overflow-hidden border-2 transition-all active:scale-95 ${
+                            isSelected ? 'border-primary bg-primary/10 shadow-lg shadow-primary/20' : 'border-surface-border bg-surface-sidebar hover:border-primary/50'
+                          }`}
+                        >
+                          <img src={avatarUrl} alt={seed} className="w-full h-full object-cover" />
+                          {isSelected && (
+                            <div className="absolute inset-0 bg-primary/10 flex items-center justify-center">
+                              <div className="bg-primary text-white p-0.5 rounded-full">
+                                <Check size={12} strokeWidth={4} />
+                              </div>
+                            </div>
+                          )}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-3 mb-8">
+                  <div className="w-2 h-6 bg-primary rounded-full"></div>
                   <h2 className="text-xl font-bold text-text-main tracking-tight">Profile Credentials</h2>
                 </div>
                 <div className="space-y-6">
@@ -112,7 +142,7 @@ export default function Settings() {
                     <input 
                       type="text" 
                       value={user.name}
-                      onChange={(e) => setUser({...user, name: e.target.value})}
+                      onChange={(e) => updateUser({ name: e.target.value })}
                       className="w-full bg-surface-sidebar border border-surface-border rounded-xl py-3 px-4 text-text-main focus:outline-none focus:border-primary/50"
                     />
                   </div>
@@ -177,8 +207,67 @@ export default function Settings() {
           )}
 
           {activeTab === 'neural' && (
-            <div className="bg-surface rounded-[32px] p-20 border border-surface-border flex items-center justify-center text-center">
-               <p className="text-text-muted font-medium">Neural settings are optimized automatically by the model.</p>
+            <div className="animate-in fade-in slide-in-from-bottom-4 duration-500 space-y-8">
+              <div className="bg-surface rounded-[32px] p-8 md:p-10 border border-surface-border shadow-sm">
+                <div className="flex items-center gap-3 mb-8">
+                  <div className="w-2 h-6 bg-primary rounded-full"></div>
+                  <h2 className="text-xl font-bold text-text-main tracking-tight">AI Orchestration</h2>
+                </div>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-10">
+                  <div className="bg-surface-sidebar border border-surface-border rounded-2xl p-6">
+                    <span className="text-[10px] font-bold text-text-muted uppercase tracking-widest block mb-1">Model Version</span>
+                    <span className="text-lg font-bold text-text-main">Neural-v4.2-Optimal</span>
+                  </div>
+                  <div className="bg-surface-sidebar border border-surface-border rounded-2xl p-6">
+                    <span className="text-[10px] font-bold text-text-muted uppercase tracking-widest block mb-1">Last Training Cycle</span>
+                    <span className="text-lg font-bold text-primary">2.4h ago</span>
+                  </div>
+                </div>
+
+                <div className="space-y-8">
+                  <ToggleRow 
+                    icon={<Brain size={18} />} 
+                    title="Aggressive Recalibration" 
+                    desc="Allocated focus is currently locked by the neural model for peak optimization."
+                    active={true}
+                    onToggle={() => {}}
+                    disabled={true}
+                  />
+                  
+                  <div className="pt-8 border-t border-surface-border">
+                    <div className="flex items-start justify-between gap-6">
+                      <div className="flex gap-4">
+                        <div className="mt-1 flex-shrink-0 text-text-muted">
+                          <Target size={18} />
+                        </div>
+                        <div>
+                          <h4 className="font-bold text-text-main text-sm mb-1">Cognitive Confidence Threshold</h4>
+                          <p className="text-xs text-text-muted font-medium mb-4">The minimum certainty the AI requires before suggesting a schedule change.</p>
+                          <div className="flex items-center gap-4">
+                            <div className="flex-1 h-1.5 bg-surface-sidebar rounded-full overflow-hidden">
+                              <div className="h-full bg-primary" style={{ width: '92%' }}></div>
+                            </div>
+                            <span className="text-sm font-bold text-primary">92%</span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              
+              <div className="bg-primary/5 border border-primary/20 rounded-[32px] p-8 flex gap-6 items-center">
+                 <div className="w-12 h-12 rounded-2xl bg-primary/20 flex items-center justify-center shrink-0">
+                    <Sparkles size={24} className="text-primary" />
+                 </div>
+                 <div>
+                    <h4 className="font-bold text-text-main text-sm mb-1">Neural Sync Active</h4>
+                    <p className="text-xs text-text-muted font-medium leading-relaxed">
+                      Your cognitive Sanctuary is currently synchronizing with the central neural lattice for optimal planning.
+                    </p>
+                 </div>
+              </div>
             </div>
           )}
 
@@ -216,9 +305,9 @@ function NavBtn({ icon, label, active, onClick }) {
   );
 }
 
-function ToggleRow({ icon, title, desc, active, onToggle }) {
+function ToggleRow({ icon, title, desc, active, onToggle, disabled }) {
   return (
-    <div className="flex items-start justify-between gap-6">
+    <div className={`flex items-start justify-between gap-6 ${disabled ? 'opacity-50' : ''}`}>
       <div className="flex gap-4">
         <div className="mt-1 flex-shrink-0 text-text-muted">
           {icon}
@@ -229,8 +318,9 @@ function ToggleRow({ icon, title, desc, active, onToggle }) {
         </div>
       </div>
       <button 
-        onClick={onToggle}
-        className={`w-12 h-6 rounded-full relative transition-colors duration-300 flex-shrink-0 ${active ? 'bg-primary' : 'bg-surface-sidebar border border-surface-border'}`}
+        onClick={disabled ? null : onToggle}
+        disabled={disabled}
+        className={`w-12 h-6 rounded-full relative transition-colors duration-300 flex-shrink-0 ${disabled ? 'cursor-not-allowed' : 'cursor-pointer'} ${active ? 'bg-primary' : 'bg-surface-sidebar border border-surface-border'}`}
       >
         <div className={`absolute top-1/2 -translate-y-1/2 w-4 h-4 rounded-full bg-white transition-all duration-300 ${active ? 'left-[26px] shadow-sm' : 'left-1'}`}></div>
       </button>
