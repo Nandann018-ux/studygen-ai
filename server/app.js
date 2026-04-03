@@ -23,11 +23,11 @@ app.use((req, res) => {
 app.use((err, req, res, next) => {
   console.error('\x1b[31m%s\x1b[0m', '!! Neural Server Error:', err.message);
   console.error(err.stack);
-  
-  res.status(err.status || 500).json({ 
-    success: false, 
+
+  res.status(err.status || 500).json({
+    success: false,
     message: err.message || 'Internal Server Error',
-    error: process.env.NODE_ENV === 'development' ? err.stack : undefined 
+    error: process.env.NODE_ENV === 'development' ? err.stack : undefined
   });
 });
 

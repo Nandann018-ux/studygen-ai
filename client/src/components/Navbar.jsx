@@ -15,16 +15,16 @@ export default function Navbar() {
       <div className="flex-shrink-0">
         <span className="font-bold text-primary text-xl tracking-tighter cursor-default uppercase opacity-80">Neural Laboratory</span>
       </div>
-      
+
       <div className="flex items-center gap-6">
-        <button 
+        <button
           onClick={toggleTheme}
           className="text-text-muted hover:text-text-main transition-colors relative hover:scale-110 active:scale-95 flex items-center justify-center p-2 rounded-full hover:bg-surface-hover"
         >
           {theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
         </button>
 
-        <button 
+        <button
           onClick={() => navigate('/settings', { state: { tab: 'profile' } })}
           className="w-10 h-10 flex items-center justify-center rounded-full border border-surface-border overflow-hidden transition-all hover:scale-105 active:scale-95 hover:border-primary/30 bg-surface-hover shadow-sm"
           title="Profile & Identity"

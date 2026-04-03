@@ -1,9 +1,9 @@
-const { 
-  runRetrainPipeline, 
-  getUserInsights, 
-  classifySubject, 
-  predictExamScore, 
-  generateAITips 
+const {
+  runRetrainPipeline,
+  getUserInsights,
+  classifySubject,
+  predictExamScore,
+  generateAITips
 } = require('../services/mlService');
 const Subject = require('../models/Subject');
 const StudyPlan = require('../models/StudyPlan');
@@ -23,13 +23,13 @@ exports.retrainModel = async (req, res) => {
 exports.getInsights = async (req, res) => {
   try {
     const userId = req.user.userId;
-    
-    
+
+
     const insights = await getUserInsights(userId);
-    
+
     const subjectCount = await Subject.countDocuments({ userId });
-    
-    
+
+
     if (subjectCount === 0) {
         await StudyPlan.deleteMany({ userId });
         await StudySession.deleteMany({ userId });
@@ -38,7 +38,7 @@ exports.getInsights = async (req, res) => {
 
     const currentPlan = await StudyPlan.find({ userId });
     const isWeighted = currentPlan.some(p => p.reasons && p.reasons.includes("Weighted Neural Allocation"));
-    
+
     if (!isWeighted && subjectCount > 0) {
         console.log(`[Neural Engine] Legacy or flat study pattern detected for ${userId}. Optimizing distribution...`);
         const allSubs = await Subject.find({ userId });
@@ -47,14 +47,14 @@ exports.getInsights = async (req, res) => {
         const completedPlans = await StudyPlan.find({ userId, isCompleted: true });
         console.log(`[Neural Engine] Preserving ${completedPlans.length} completed plan items during optimization.`);
         await StudyPlan.deleteMany({ userId, isCompleted: false });
-        
+
         const completedKeys = new Set(
           completedPlans.map(p => {
             const dateStr = p.date ? p.date.toISOString().split('T')[0] : '';
             return `${p.subjectId}_${dateStr}`;
           })
         );
-        
+
         const plansToSave = planData
             .filter(item => {
               const dateStr = typeof item.date === 'string'

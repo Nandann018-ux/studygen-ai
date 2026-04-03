@@ -27,12 +27,12 @@ def load_model(name):
 def main():
     try:
         args = get_args()
-        
-        
+
+
         urgency = args.syllabus / args.days if args.days > 0 else args.syllabus
-        
-        
-        
+
+
+
         df = pd.DataFrame([{
             'difficulty': args.difficulty,
             'proficiency': args.proficiency,
@@ -51,7 +51,7 @@ def main():
                 pred = model.predict(df)[0]
                 result = {"predictedHours": float(round(pred, 1))}
             else:
-                
+
                 comp_weight = (args.difficulty / 5) * 1.5 + 1
                 result = {"predictedHours": float(round(comp_weight * (args.syllabus/20 + 1), 1))}
 
@@ -76,7 +76,7 @@ def main():
                 result = {"predictedScore": float(round(min(100, max(0, baseline)), 1))}
 
         elif args.task == 'tips':
-            
+
             if args.difficulty >= 4:
                 tips = [
                     f"Break {args.subject} into tight 25-minute Pomodoro sprints.",

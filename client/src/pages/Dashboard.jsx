@@ -35,12 +35,12 @@ export default function Dashboard() {
   const [showSubjectModal, setShowSubjectModal] = useState(false);
 
   useEffect(() => {
-    
+
     const userData = localStorage.getItem('studygen_user');
     if (userData) {
       try {
         const user = JSON.parse(userData);
-        if (user.name) setUserName(user.name.split(' ')[0]); 
+        if (user.name) setUserName(user.name.split(' ')[0]);
       } catch (e) {}
     }
     const fetchDashboardData = async () => {
@@ -55,7 +55,7 @@ export default function Dashboard() {
         setSubjects(subjectsRes.data);
         setPlan(planRes.data);
         setInsights(insightsRes.data);
-        
+
         console.log("Dashboard state synchronized with neural engine.");
       } catch (err) {
         console.error('Error fetching dashboard data:', err);
@@ -73,7 +73,7 @@ export default function Dashboard() {
     .reduce((acc, p) => acc + Number(p.allocatedHours), 0)
     .toFixed(1);
 
-  
+
   useEffect(() => {
     if (!loading && subjects.length > 0 && todayPlan.length === 0) {
       console.log("[Neural Engine] Subjects detected but no active plan. Suggesting initialization.");
@@ -83,16 +83,16 @@ export default function Dashboard() {
   const now = new Date();
   const fourteenDaysFromNow = new Date(now.getTime() + 14 * 24 * 60 * 60 * 1000);
   const threeDaysFromNow = new Date(now.getTime() + 3 * 24 * 60 * 60 * 1000);
-  
+
   const relevantSubjects = subjects.filter(s => {
     if (!s.examDate) return false;
     const d = new Date(s.examDate);
     return d >= now && d <= fourteenDaysFromNow;
   }).sort((a, b) => new Date(a.examDate) - new Date(b.examDate));
-  
+
   const upcomingDeadlinesCount = relevantSubjects.length;
   const hasUrgentDeadline = relevantSubjects.some(s => new Date(s.examDate) <= threeDaysFromNow);
-  
+
   const weakestSubject = loading ? (subjects.length > 0 ? 'Analyzing...' : 'N/A') : (insights?.weakest || 'N/A');
   const strongestSubject = loading ? (subjects.length > 0 ? 'Analyzing...' : 'N/A') : (insights?.strongest || 'N/A');
 
@@ -185,37 +185,37 @@ export default function Dashboard() {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
-        <StatCard 
-          icon={<Book size={18} className="text-primary" />} 
+        <StatCard
+          icon={<Book size={18} className="text-primary" />}
           badge={subjects.length > 0 ? "Active" : "Add One"}
           badgeColor="text-primary bg-primary/10"
-          title="TOTAL SUBJECTS" 
-          value={loading ? '-' : subjects.length.toString()} 
+          title="TOTAL SUBJECTS"
+          value={loading ? '-' : subjects.length.toString()}
           onClick={subjects.length > 0 ? () => setShowSubjectModal(true) : undefined}
           isActionable={subjects.length > 0}
         />
-        <StatCard 
-          icon={<Clock size={18} className="text-primary" />} 
+        <StatCard
+          icon={<Clock size={18} className="text-primary" />}
           badge="Daily Load"
           badgeColor="text-primary bg-primary/10"
-          title="STUDY HOURS TODAY" 
-          value={loading ? '-' : `${totalHours}h`} 
+          title="STUDY HOURS TODAY"
+          value={loading ? '-' : `${totalHours}h`}
         />
-        <StatCard 
-          icon={upcomingDeadlinesCount > 0 ? <AlertTriangle size={18} className={hasUrgentDeadline ? "text-[#ff4e4e]" : "text-primary"} /> : <CheckCircle2 size={18} className="text-primary" />} 
+        <StatCard
+          icon={upcomingDeadlinesCount > 0 ? <AlertTriangle size={18} className={hasUrgentDeadline ? "text-[#ff4e4e]" : "text-primary"} /> : <CheckCircle2 size={18} className="text-primary" />}
           badge={upcomingDeadlinesCount > 0 ? (hasUrgentDeadline ? "Urgent" : "Tracking") : "Pristine"}
           badgeColor={upcomingDeadlinesCount > 0 ? (hasUrgentDeadline ? "text-[#ff4e4e] bg-[#ff4e4e]/10 font-black" : "text-primary bg-primary/10") : "text-primary bg-primary/10"}
-          title="DEADLINES" 
+          title="DEADLINES"
           value={loading ? '-' : (upcomingDeadlinesCount > 0 ? upcomingDeadlinesCount.toString() : "All Clear! 🏆")}
           onClick={upcomingDeadlinesCount > 0 ? () => setShowDeadlineModal(true) : undefined}
           isActionable={upcomingDeadlinesCount > 0}
         />
-        <StatCard 
-          icon={<Brain size={18} className={insights?.weakest !== 'N/A' ? "text-[#ff4e4e]" : "text-[#a1a1aa]"} />} 
+        <StatCard
+          icon={<Brain size={18} className={insights?.weakest !== 'N/A' ? "text-[#ff4e4e]" : "text-[#a1a1aa]"} />}
           badge={insights?.weakest !== 'N/A' ? "Action Needed" : "Gathering Data"}
           badgeColor={insights?.weakest !== 'N/A' ? "text-[#ff4e4e] bg-[#ff4e4e]/10 font-bold" : "text-[#a1a1aa] bg-[#2a2d3a] font-bold"}
-          title="WEAK SUBJECT" 
-          value={loading ? '-' : (weakestSubject.substring(0, 15) || 'N/A')} 
+          title="WEAK SUBJECT"
+          value={loading ? '-' : (weakestSubject.substring(0, 15) || 'N/A')}
         />
       </div>
 
@@ -223,14 +223,14 @@ export default function Dashboard() {
         <div className="xl:col-span-5 flex flex-col">
           <div className="flex justify-between items-end mb-6">
             <h2 className="text-2xl font-bold text-text-main tracking-tight">Today's Deep Work Plan</h2>
-            <button 
+            <button
               onClick={() => navigate('/plan')}
               className="text-primary text-sm font-bold tracking-wide hover:text-primary-light transition-all active:scale-95 hover:scale-105 inline-block"
             >
               View Roadmap
             </button>
           </div>
-          
+
           <div className="space-y-5 flex-1">
             {loading ? (
               <div className="text-text-muted text-sm tracking-widest uppercase">Initializing Neural Paths...</div>
@@ -244,9 +244,9 @@ export default function Dashboard() {
                 const start = formatTime(currentStartHour);
                 currentStartHour += item.allocatedHours;
                 const end = formatTime(currentStartHour);
-                
+
                 return (
-                  <SessionCard 
+                  <SessionCard
                     key={item._id || idx}
                     intensity={item.allocatedHours > 2 ? "High Intensity" : "Standard Focus"}
                     intensityColor={item.allocatedHours > 2 ? "bg-primary/20 text-primary" : "bg-[#3b82f6]/20 text-[#3b82f6]"}
@@ -265,7 +265,7 @@ export default function Dashboard() {
         <div className="xl:col-span-7 flex flex-col">
           <div className="relative rounded-[32px] overflow-hidden mb-8 group border border-surface-border h-[280px]">
              <div className="absolute inset-0 bg-surface/50 backdrop-blur-xl z-0"></div>
-             
+
              <div className="absolute inset-0 p-8 z-10 flex flex-col justify-between">
                 <div className="flex justify-between items-start">
                    <div className="flex items-center gap-3">
@@ -314,7 +314,7 @@ export default function Dashboard() {
                          <span className="text-sm font-bold text-text-main">{loading ? '...' : weakestSubject}</span>
                       </div>
                    </div>
-                   <button 
+                   <button
                      onClick={() => navigate('/plan')}
                      className="bg-primary hover:bg-primary-light text-[#0a0b10] px-6 py-2 rounded-full font-bold text-xs transition-all hover:scale-105 active:scale-95"
                    >
@@ -325,7 +325,7 @@ export default function Dashboard() {
           </div>
 
           <div className="grid grid-cols-2 gap-6 flex-1">
-            <button 
+            <button
               onClick={() => navigate('/focus')}
               className="bg-surface border border-surface-border rounded-[28px] p-6 flex flex-col items-center justify-center text-center transition-all hover:border-primary/30 hover:bg-surface-hover group active:scale-[0.98]"
             >
@@ -333,7 +333,7 @@ export default function Dashboard() {
               <h4 className="text-text-main font-bold mb-1">Deep Work Timer</h4>
               <span className="text-[9px] text-text-muted font-bold tracking-widest uppercase">25 / 5 Cycle</span>
             </button>
-            <button 
+            <button
               onClick={() => navigate('/analytics')}
               className="bg-surface border border-surface-border rounded-[28px] p-6 flex flex-col items-center justify-center text-center transition-all hover:border-primary/30 hover:bg-surface-hover group active:scale-[0.98]"
             >
@@ -349,13 +349,13 @@ export default function Dashboard() {
       {showSubjectModal && (
         <div className="fixed inset-0 bg-[#0a0b10]/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-in fade-in zoom-in-95 duration-200">
           <div className="bg-surface border border-surface-border rounded-[32px] p-10 w-full max-w-lg shadow-2xl relative">
-            <button 
+            <button
               onClick={() => setShowSubjectModal(false)}
               className="absolute top-8 right-8 text-text-muted hover:text-text-main hover:bg-surface-hover p-2 rounded-full transition-all active:scale-95"
             >
               <X size={24} />
             </button>
-            
+
             <div className="flex items-center gap-4 mb-8">
                <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center">
                   <Book size={24} className="text-primary" />
@@ -381,7 +381,7 @@ export default function Dashboard() {
             </div>
 
             <div className="mt-10">
-               <button 
+               <button
                  onClick={() => navigate('/subjects')}
                  className="w-full bg-surface-sidebar text-text-main border border-surface-border py-4 rounded-xl font-bold hover:bg-surface-hover transition-all active:scale-95 text-sm uppercase tracking-widest flex items-center justify-center gap-2"
                >
@@ -396,13 +396,13 @@ export default function Dashboard() {
       {showDeadlineModal && (
         <div className="fixed inset-0 bg-[#0a0b10]/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-in fade-in zoom-in-95 duration-200">
           <div className="bg-surface border border-surface-border rounded-[32px] p-10 w-full max-w-lg shadow-2xl relative">
-            <button 
+            <button
               onClick={() => setShowDeadlineModal(false)}
               className="absolute top-8 right-8 text-text-muted hover:text-text-main hover:bg-surface-hover p-2 rounded-full transition-all active:scale-95"
             >
               <X size={24} />
             </button>
-            
+
             <div className="flex items-center gap-4 mb-8">
                <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center">
                   <AlertTriangle size={24} className="text-primary" />
@@ -443,7 +443,7 @@ export default function Dashboard() {
             </div>
 
             <div className="mt-10">
-               <button 
+               <button
                  onClick={() => navigate('/plan')}
                  className="w-full bg-primary text-[#0a0b10] py-4 rounded-xl font-bold shadow-lg shadow-primary/20 hover:bg-primary-light transition-all active:scale-95 text-sm uppercase tracking-widest flex items-center justify-center gap-2"
                >
@@ -459,7 +459,7 @@ export default function Dashboard() {
 
 function StatCard({ icon, badge, badgeColor, title, value, onClick, isActionable }) {
   return (
-    <div 
+    <div
       onClick={onClick}
       className={`bg-surface rounded-[28px] p-6 border border-surface-border flex flex-col justify-between h-[150px] transition-all hover:border-[#383b4b] ${onClick ? 'cursor-pointer active:scale-[0.98]' : ''} relative group`}
     >
@@ -499,7 +499,7 @@ function SessionCard({ intensity, intensityColor, time, title, desc, progressLab
       <p className="text-text-muted text-sm leading-relaxed mb-6 font-medium">
         {desc}
       </p>
-      
+
       <div>
         <div className="flex justify-between items-center mb-2">
           <span className="text-[10px] font-bold tracking-widest uppercase text-text-muted">{progressLabel}</span>

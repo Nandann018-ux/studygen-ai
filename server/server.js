@@ -13,7 +13,7 @@ const PORT = process.env.PORT || 5001;
 async function startNeuralBackend() {
   try {
     console.log('>> Synchronizing with Neural Database...');
-    await connectDB(); 
+    await connectDB();
     console.log('>> Database connection established.');
 
     app.listen(PORT, () => {

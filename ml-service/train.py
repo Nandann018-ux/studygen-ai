@@ -20,7 +20,7 @@ df = pd.read_csv(CSV_PATH)
 
 
 if 'is_real_data' not in df.columns:
-    df['is_real_data'] = 0 
+    df['is_real_data'] = 0
 
 
 required_cols = {
@@ -56,8 +56,8 @@ print(f"✅ Study Hours Model trained. R2: {hours_model.score(X_test, y_test):.4
 
 
 
-df['level_label'] = pd.cut(df['proficiency'] - df['difficulty'], 
-                           bins=[-6, -1, 1, 6], 
+df['level_label'] = pd.cut(df['proficiency'] - df['difficulty'],
+                           bins=[-6, -1, 1, 6],
                            labels=[0, 1, 2]).astype(int)
 
 y_class = df['level_label']
@@ -69,7 +69,7 @@ print(f"✅ Subject Classification Model trained. Acc: {class_model.score(X_test
 
 
 
-y_score = df['completion'] 
+y_score = df['completion']
 X_train_s, X_test_s, y_train_s, y_test_s = train_test_split(X, y_score, test_size=0.2, random_state=42)
 score_model = LinearRegression()
 score_model.fit(X_train_s, y_train_s)

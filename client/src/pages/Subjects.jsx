@@ -8,8 +8,8 @@ export default function Subjects() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [editId, setEditId] = useState(null);
-  
-  
+
+
   const subjectDataset = [
     "Data Structures & Algorithms",
     "Web Architecture",
@@ -32,7 +32,7 @@ export default function Subjects() {
     "Environmental Science",
     "Digital Logic Design"
   ].sort();
-  
+
   const initialFormState = {
     name: '',
     difficulty: 3,
@@ -49,7 +49,7 @@ export default function Subjects() {
   const fetchSubjects = async () => {
     try {
       const response = await api.get('/subjects');
-      
+
       const subjectsWithLevel = await Promise.all(response.data.map(async (sub) => {
         try {
           const levelRes = await api.post('/ml/classify', sub);
@@ -79,7 +79,7 @@ export default function Subjects() {
       } else {
         await api.post('/subjects', formData);
       }
-      
+
       setFormData(initialFormState);
       setIsModalOpen(false);
       setIsEditing(false);
@@ -157,7 +157,7 @@ export default function Subjects() {
         <div className="text-center py-20 text-text-muted font-bold tracking-widest uppercase">Querying neural clusters...</div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-16">
-          <div 
+          <div
             onClick={openAddModal}
             className="bg-transparent border-2 border-dashed border-surface-border rounded-[32px] p-8 min-h-[260px] flex flex-col items-center justify-center cursor-pointer hover:bg-surface-hover/30 transition-all group"
           >
@@ -171,18 +171,18 @@ export default function Subjects() {
             const styles = getDifficultyStyles(subject.difficulty, subject.level);
             const progress = 100 - (subject.syllabusRemaining !== undefined ? Number(subject.syllabusRemaining) : 100);
             const displayName = subject.name || subject.subjectName || "Unnamed Node";
-            
+
             return (
               <div key={subject._id} className="bg-surface border border-surface-border rounded-[32px] p-8 flex flex-col justify-between hover:border-[#383b4b] transition-all group relative overflow-hidden">
                 <div className="absolute top-6 right-6 flex gap-2 opacity-0 group-hover:opacity-100 transition-all translate-y-2 group-hover:translate-y-0">
-                   <button 
+                   <button
                      onClick={(e) => { e.stopPropagation(); handleEdit(subject); }}
                      className="p-2 bg-surface-sidebar border border-surface-border rounded-xl text-text-muted hover:text-primary hover:border-primary/30 transition-all active:scale-95"
                      title="Reconfigure Node"
                    >
                       <Edit2 size={14} />
                    </button>
-                   <button 
+                   <button
                      onClick={(e) => { e.stopPropagation(); handleDelete(subject._id, displayName); }}
                      className="p-2 bg-surface-sidebar border border-surface-border rounded-xl text-text-muted hover:text-[#ff4e4e] hover:border-[#ff4e4e]/30 transition-all active:scale-95"
                      title="Terminate Node"
@@ -221,7 +221,7 @@ export default function Subjects() {
                      </div>
                   </div>
                 </div>
-                
+
                 <div>
                   <div className="flex justify-between items-center mb-3">
                     <span className="text-[10px] font-bold tracking-[0.15em] uppercase text-text-muted">Knowledge Density</span>
@@ -241,7 +241,7 @@ export default function Subjects() {
       {isModalOpen && (
         <div className="fixed inset-0 bg-[#0a0b10]/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-in fade-in zoom-in-95 duration-200">
           <div className="bg-surface border border-surface-border rounded-[32px] p-10 w-full max-w-2xl shadow-2xl relative max-h-[90vh] overflow-y-auto">
-            <button 
+            <button
               onClick={() => setIsModalOpen(false)}
               className="absolute top-8 right-8 text-text-muted hover:text-text-main hover:bg-surface-hover p-2 rounded-full transition-all active:scale-95"
             >
@@ -253,12 +253,12 @@ export default function Subjects() {
             <p className="text-text-muted text-sm mb-8">
                 {isEditing ? 'Update your cognitive parameters for real-time AI recalibration.' : 'Provision your cognitive parameters for AI model training.'}
             </p>
-            
+
             <form onSubmit={handleSubmit} className="space-y-6">
               <div>
                 <label className="block text-xs font-bold text-text-muted mb-2 uppercase tracking-wide">Subject Identity</label>
-                <input 
-                  type="text" 
+                <input
+                  type="text"
                   list="subject-dataset"
                   placeholder="Select or type subject node..."
                   className="w-full bg-surface-hover border border-surface-border rounded-xl px-5 py-4 text-text-main text-sm focus:outline-none focus:border-primary/50 focus:ring-2 focus:ring-primary/20 transition-all"
@@ -276,12 +276,12 @@ export default function Subjects() {
               <div className="grid grid-cols-2 gap-6">
                 <div>
                   <label className="block text-xs font-bold text-text-muted mb-2 uppercase tracking-wide">Difficulty (1-5)</label>
-                  <input 
-                    type="number" 
-                    min="1" 
-                    max="5" 
-                    className="w-full bg-surface-hover border border-surface-border rounded-xl px-5 py-4 text-text-main text-sm focus:outline-none focus:border-primary/50" 
-                    value={formData.difficulty} 
+                  <input
+                    type="number"
+                    min="1"
+                    max="5"
+                    className="w-full bg-surface-hover border border-surface-border rounded-xl px-5 py-4 text-text-main text-sm focus:outline-none focus:border-primary/50"
+                    value={formData.difficulty}
                     onChange={(e) => {
                       const val = e.target.value === '' ? '' : Math.min(5, Math.max(1, Number(e.target.value)));
                       setFormData({...formData, difficulty: val});
@@ -289,25 +289,25 @@ export default function Subjects() {
                     onBlur={() => {
                         if (formData.difficulty === '') setFormData({...formData, difficulty: 3});
                     }}
-                    required 
+                    required
                   />
                 </div>
                 <div>
                   <label className="block text-xs font-bold text-text-muted mb-2 uppercase tracking-wide">Proficiency (1-5)</label>
-                  <input 
-                    type="number" 
-                    min="1" 
-                    max="5" 
-                    className="w-full bg-surface-hover border border-surface-border rounded-xl px-5 py-4 text-text-main text-sm focus:outline-none focus:border-primary/50" 
-                    value={formData.proficiency} 
+                  <input
+                    type="number"
+                    min="1"
+                    max="5"
+                    className="w-full bg-surface-hover border border-surface-border rounded-xl px-5 py-4 text-text-main text-sm focus:outline-none focus:border-primary/50"
+                    value={formData.proficiency}
                     onChange={(e) => {
                       const val = e.target.value === '' ? '' : Math.min(5, Math.max(1, Number(e.target.value)));
                       setFormData({...formData, proficiency: val});
-                    }} 
+                    }}
                     onBlur={() => {
                         if (formData.proficiency === '') setFormData({...formData, proficiency: 3});
                     }}
-                    required 
+                    required
                   />
                 </div>
               </div>
@@ -315,39 +315,39 @@ export default function Subjects() {
               <div className="grid grid-cols-2 gap-6">
                 <div>
                   <label className="block text-xs font-bold text-text-muted mb-2 uppercase tracking-wide">Syllabus left (0-100%)</label>
-                  <input 
-                    type="number" 
-                    min="0" 
-                    max="100" 
-                    className="w-full bg-surface-hover border border-surface-border rounded-xl px-5 py-4 text-text-main text-sm focus:outline-none focus:border-primary/50" 
-                    value={formData.syllabusRemaining} 
+                  <input
+                    type="number"
+                    min="0"
+                    max="100"
+                    className="w-full bg-surface-hover border border-surface-border rounded-xl px-5 py-4 text-text-main text-sm focus:outline-none focus:border-primary/50"
+                    value={formData.syllabusRemaining}
                     onChange={(e) => {
                       const val = e.target.value === '' ? '' : Math.min(100, Math.max(0, Number(e.target.value)));
                       setFormData({...formData, syllabusRemaining: val});
-                    }} 
+                    }}
                     onBlur={() => {
                         if (formData.syllabusRemaining === '') setFormData({...formData, syllabusRemaining: 50});
                     }}
-                    required 
+                    required
                   />
                 </div>
                 <div>
                   <label className="block text-xs font-bold text-text-muted mb-2 uppercase tracking-wide">Study Daily (0.5-12 Hours)</label>
-                  <input 
-                    type="number" 
-                    step="0.5" 
-                    min="1" 
-                    max="12" 
-                    className="w-full bg-surface-hover border border-surface-border rounded-xl px-5 py-4 text-text-main text-sm focus:outline-none focus:border-primary/50" 
-                    value={formData.hoursPerDay} 
+                  <input
+                    type="number"
+                    step="0.5"
+                    min="1"
+                    max="12"
+                    className="w-full bg-surface-hover border border-surface-border rounded-xl px-5 py-4 text-text-main text-sm focus:outline-none focus:border-primary/50"
+                    value={formData.hoursPerDay}
                     onChange={(e) => {
                       const val = e.target.value === '' ? '' : Math.min(12, Math.max(0.5, Number(e.target.value)));
                       setFormData({...formData, hoursPerDay: val});
-                    }} 
+                    }}
                     onBlur={() => {
                         if (formData.hoursPerDay === '') setFormData({...formData, hoursPerDay: 2});
                     }}
-                    required 
+                    required
                   />
                 </div>
               </div>
@@ -355,20 +355,20 @@ export default function Subjects() {
               <div className="grid grid-cols-2 gap-6">
                 <div>
                   <label className="block text-xs font-bold text-text-muted mb-2 uppercase tracking-wide">Previous Exam Score (0-100%)</label>
-                  <input 
-                    type="number" 
-                    min="0" 
-                    max="100" 
-                    className="w-full bg-surface-hover border border-surface-border rounded-xl px-5 py-4 text-text-main text-sm focus:outline-none focus:border-primary/50" 
-                    value={formData.previousScore} 
+                  <input
+                    type="number"
+                    min="0"
+                    max="100"
+                    className="w-full bg-surface-hover border border-surface-border rounded-xl px-5 py-4 text-text-main text-sm focus:outline-none focus:border-primary/50"
+                    value={formData.previousScore}
                     onChange={(e) => {
                       const val = e.target.value === '' ? '' : Math.min(100, Math.max(0, Number(e.target.value)));
                       setFormData({...formData, previousScore: val});
-                    }} 
+                    }}
                     onBlur={() => {
                         if (formData.previousScore === '') setFormData({...formData, previousScore: 60});
                     }}
-                    required 
+                    required
                   />
                 </div>
                 <div>
@@ -378,8 +378,8 @@ export default function Subjects() {
               </div>
 
               <div className="flex items-center gap-3 py-2">
-                 <input 
-                   type="checkbox" 
+                 <input
+                   type="checkbox"
                    id="revisionReq"
                    className="w-5 h-5 accent-primary"
                    checked={formData.revisionRequired}

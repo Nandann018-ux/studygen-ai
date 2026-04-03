@@ -22,8 +22,8 @@ export default function Sidebar({ className }) {
   return (
     <aside className={`flex flex-col ${className}`}>
       {}
-      <Link 
-        to="/dashboard" 
+      <Link
+        to="/dashboard"
         className="p-8 pb-6 flex flex-col gap-1 tracking-tight group hover:scale-[1.02] active:scale-95 transition-all"
       >
         <h1 className="text-xl font-bold leading-none">
@@ -38,8 +38,8 @@ export default function Sidebar({ className }) {
         {menuItems.map(item => {
           const isActive = location.pathname.includes(item.path);
           return (
-            <Link 
-              key={item.name} 
+            <Link
+              key={item.name}
               to={item.path}
               className={`flex items-center gap-4 px-5 py-3.5 rounded-2xl font-medium text-sm transition-all active:scale-95
                 ${isActive ? 'bg-primary/10 text-primary border border-primary/20'  : 'text-text-muted hover:text-text-main hover:bg-surface-hover hover:translate-x-1'}`}>
@@ -53,7 +53,7 @@ export default function Sidebar({ className }) {
       </div>
 
       <div className="p-4 mb-4">
-        <button 
+        <button
           onClick={() => navigate('/settings', { state: { tab: 'profile' } })}
           className="w-full bg-surface-hover p-3 rounded-2xl flex items-center gap-3 border border-surface-border transition-all hover:border-primary/30 group active:scale-[0.98]"
         >

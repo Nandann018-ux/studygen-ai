@@ -14,7 +14,7 @@ async function exportToCSV() {
     console.log('Connected to MongoDB for export...');
 
     const sessions = await StudySession.find().populate('subjectId');
-    
+
     if (sessions.length === 0) {
       console.log('No sessions found to export.');
       process.exit(0);
@@ -24,10 +24,10 @@ async function exportToCSV() {
     const rows = sessions.map(s => {
       const sub = s.subjectId;
       if (!sub) return null;
-      
-      
+
+
       const daysLeft = sub.examDate ? Math.max(0, Math.ceil((new Date(sub.examDate) - new Date()) / (1000 * 60 * 60 * 24))) : 30;
-      
+
       return [
         sub.difficulty || 3,
         sub.syllabusRemaining || 50,
@@ -37,8 +37,8 @@ async function exportToCSV() {
     }).filter(row => row !== null);
 
     const csvContent = [headers.join(','), ...rows].join('\n');
-    
-    
+
+
     const dir = path.dirname(EXPORT_PATH);
     if (!fs.existsSync(dir)){
         fs.mkdirSync(dir, { recursive: true });
@@ -46,7 +46,7 @@ async function exportToCSV() {
 
     fs.writeFileSync(EXPORT_PATH, csvContent);
     console.log(`Successfully exported ${rows.length} records to ${EXPORT_PATH}`);
-    
+
     await mongoose.connection.close();
     process.exit(0);
   } catch (err) {

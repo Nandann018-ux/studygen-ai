@@ -12,7 +12,7 @@ export default function Settings() {
   const { user, updateUser } = useUser();
   const [saving, setSaving] = useState(false);
 
-  
+
   useEffect(() => {
     if (location.state?.tab) {
       setActiveTab(location.state.tab);
@@ -33,8 +33,8 @@ export default function Settings() {
         dailyStudyHours: user.dailyStudyHours,
         avatar: user.avatar
       });
-      
-      
+
+
       alert('Neural synchronization successful.');
     } catch (err) {
       console.error('Adjustment failed:', err);
@@ -58,34 +58,34 @@ export default function Settings() {
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-12">
         <div className="lg:col-span-4 space-y-8">
           <nav className="space-y-2">
-            <NavBtn 
-              icon={<User size={18} />} 
-              label="Profile & Identity" 
-              active={activeTab === 'profile'} 
-              onClick={() => setActiveTab('profile')} 
+            <NavBtn
+              icon={<User size={18} />}
+              label="Profile & Identity"
+              active={activeTab === 'profile'}
+              onClick={() => setActiveTab('profile')}
             />
-            <NavBtn 
-              icon={<Monitor size={18} />} 
-              label="Interface & Workspace" 
-              active={activeTab === 'interface'} 
-              onClick={() => setActiveTab('interface')} 
+            <NavBtn
+              icon={<Monitor size={18} />}
+              label="Interface & Workspace"
+              active={activeTab === 'interface'}
+              onClick={() => setActiveTab('interface')}
             />
-            <NavBtn 
-              icon={<Target size={18} />} 
-              label="Cognitive Limits" 
-              active={activeTab === 'cognitive'} 
-              onClick={() => setActiveTab('cognitive')} 
+            <NavBtn
+              icon={<Target size={18} />}
+              label="Cognitive Limits"
+              active={activeTab === 'cognitive'}
+              onClick={() => setActiveTab('cognitive')}
             />
-            <NavBtn 
-              icon={<Brain size={18} />} 
-              label="AI & Neural Models" 
-              active={activeTab === 'neural'} 
-              onClick={() => setActiveTab('neural')} 
+            <NavBtn
+              icon={<Brain size={18} />}
+              label="AI & Neural Models"
+              active={activeTab === 'neural'}
+              onClick={() => setActiveTab('neural')}
             />
           </nav>
 
           <div className="pt-8 border-t border-surface-border">
-            <button 
+            <button
               onClick={handleLogout}
               className="w-full flex items-center gap-4 px-6 py-4 rounded-2xl text-red-500 hover:bg-red-500/10 transition-all font-semibold text-sm active:scale-95"
             >
@@ -139,8 +139,8 @@ export default function Settings() {
                 <div className="space-y-6">
                   <div>
                     <label className="block text-sm font-bold text-text-main mb-2">Display Name</label>
-                    <input 
-                      type="text" 
+                    <input
+                      type="text"
                       value={user.name}
                       onChange={(e) => updateUser({ name: e.target.value })}
                       className="w-full bg-surface-sidebar border border-surface-border rounded-xl py-3 px-4 text-text-main focus:outline-none focus:border-primary/50"
@@ -148,8 +148,8 @@ export default function Settings() {
                   </div>
                   <div>
                     <label className="block text-sm font-bold text-text-main mb-2">Email Endpoint</label>
-                    <input 
-                      type="email" 
+                    <input
+                      type="email"
                       value={user.email || 'user@studygen.ai'}
                       readOnly
                       className="w-full bg-surface-sidebar/50 border border-surface-border rounded-xl py-3 px-4 text-text-muted/80 cursor-not-allowed focus:outline-none transition-all selection:bg-primary/20"
@@ -167,9 +167,9 @@ export default function Settings() {
                   <div className="w-2 h-6 bg-primary rounded-full"></div>
                   <h2 className="text-xl font-bold text-text-main tracking-tight">Visual Environment</h2>
                 </div>
-                <ToggleRow 
-                  icon={theme === 'dark' ? <Moon size={18} /> : <Sun size={18} />} 
-                  title="Dark Architecture" 
+                <ToggleRow
+                  icon={theme === 'dark' ? <Moon size={18} /> : <Sun size={18} />}
+                  title="Dark Architecture"
                   desc="Switch between light and dark visual sanctuary themes."
                   active={theme === 'dark'}
                   onToggle={toggleTheme}
@@ -190,10 +190,10 @@ export default function Settings() {
                     Daily Active Focus Capacity
                     <span className="text-primary font-black uppercase tracking-widest">{user.dailyStudyHours || 6} hrs</span>
                   </label>
-                  <input 
-                    type="range" 
-                    min="1" 
-                    max="16" 
+                  <input
+                    type="range"
+                    min="1"
+                    max="16"
                     value={user.dailyStudyHours || 6}
                     onChange={(e) => updateUser({ dailyStudyHours: parseInt(e.target.value) })}
                     className="neural-slider"
@@ -213,7 +213,7 @@ export default function Settings() {
                   <div className="w-2 h-6 bg-primary rounded-full"></div>
                   <h2 className="text-xl font-bold text-text-main tracking-tight">AI Orchestration</h2>
                 </div>
-                
+
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-10">
                   <div className="bg-surface-sidebar border border-surface-border rounded-2xl p-6">
                     <span className="text-[10px] font-bold text-text-muted uppercase tracking-widest block mb-1">Model Version</span>
@@ -226,15 +226,15 @@ export default function Settings() {
                 </div>
 
                 <div className="space-y-8">
-                  <ToggleRow 
-                    icon={<Brain size={18} />} 
-                    title="Aggressive Recalibration" 
+                  <ToggleRow
+                    icon={<Brain size={18} />}
+                    title="Aggressive Recalibration"
                     desc="Allocated focus is currently locked by the neural model for peak optimization."
                     active={true}
                     onToggle={() => {}}
                     disabled={true}
                   />
-                  
+
                   <div className="pt-8 border-t border-surface-border">
                     <div className="flex items-start justify-between gap-6">
                       <div className="flex gap-4">
@@ -256,7 +256,7 @@ export default function Settings() {
                   </div>
                 </div>
               </div>
-              
+
               <div className="bg-primary/5 border border-primary/20 rounded-[32px] p-8 flex gap-6 items-center">
                  <div className="w-12 h-12 rounded-2xl bg-primary/20 flex items-center justify-center shrink-0">
                     <Sparkles size={24} className="text-primary" />
@@ -272,7 +272,7 @@ export default function Settings() {
           )}
 
           <div className="flex justify-end mt-8">
-            <button 
+            <button
               onClick={handleSave}
               disabled={saving}
               className="bg-primary hover:bg-primary-light text-[#0a0b10] px-10 py-4 rounded-full font-bold text-sm tracking-wide shadow-xl shadow-primary/20 transition-all active:scale-95 group flex items-center gap-2 hover:scale-105 disabled:opacity-50"
@@ -289,11 +289,11 @@ export default function Settings() {
 
 function NavBtn({ icon, label, active, onClick }) {
   return (
-    <button 
+    <button
       onClick={onClick}
       className={`w-full flex items-center gap-4 px-6 py-4 rounded-2xl transition-all font-semibold text-sm active:scale-[0.98]
-        ${active 
-          ? 'bg-primary/10 text-primary border border-primary/20' 
+        ${active
+          ? 'bg-primary/10 text-primary border border-primary/20'
           : 'text-text-muted hover:bg-surface hover:text-text-main border border-transparent hover:translate-x-1'
         }`}
     >
@@ -317,7 +317,7 @@ function ToggleRow({ icon, title, desc, active, onToggle, disabled }) {
           <p className="text-xs text-text-muted font-medium">{desc}</p>
         </div>
       </div>
-      <button 
+      <button
         onClick={disabled ? null : onToggle}
         disabled={disabled}
         className={`w-12 h-6 rounded-full relative transition-colors duration-300 flex-shrink-0 ${disabled ? 'cursor-not-allowed' : 'cursor-pointer'} ${active ? 'bg-primary' : 'bg-surface-sidebar border border-surface-border'}`}

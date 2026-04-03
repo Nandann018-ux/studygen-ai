@@ -8,12 +8,12 @@ async function seedUserDashboard(userId) {
   try {
     console.log(`[Seeder] Bootstrapping neural nodes for ${userId}...`);
 
-    
+
     await Subject.deleteMany({ userId });
     await StudySession.deleteMany({ userId });
     await StudyPlan.deleteMany({ userId });
 
-    
+
     const subjects = await Subject.insertMany([
       {
         userId,
@@ -21,17 +21,17 @@ async function seedUserDashboard(userId) {
         difficulty: 5,
         proficiency: 2,
         syllabusRemaining: 75,
-        examDate: new Date(Date.now() + 15 * 24 * 60 * 60 * 1000), 
+        examDate: new Date(Date.now() + 15 * 24 * 60 * 60 * 1000),
         previousScore: 65,
-        hoursPerDay: 4 
+        hoursPerDay: 4
       },
       {
         userId,
         name: 'Web Architecture',
         difficulty: 4,
         proficiency: 3,
-        syllabusRemaining: 40, 
-        examDate: new Date(Date.now() + 25 * 24 * 60 * 60 * 1000), 
+        syllabusRemaining: 40,
+        examDate: new Date(Date.now() + 25 * 24 * 60 * 60 * 1000),
         previousScore: 78,
         hoursPerDay: 2.5
       },
@@ -40,33 +40,33 @@ async function seedUserDashboard(userId) {
         name: 'Systems Design',
         difficulty: 3,
         proficiency: 4,
-        syllabusRemaining: 20, 
-        examDate: new Date(Date.now() + 40 * 24 * 60 * 60 * 1000), 
+        syllabusRemaining: 20,
+        examDate: new Date(Date.now() + 40 * 24 * 60 * 60 * 1000),
         previousScore: 82,
-        hoursPerDay: 1.5 
+        hoursPerDay: 1.5
       },
       {
         userId,
         name: 'Engineering Maths',
         difficulty: 5,
         proficiency: 1,
-        syllabusRemaining: 85, 
-        examDate: new Date(Date.now() + 10 * 24 * 60 * 60 * 1000), 
+        syllabusRemaining: 85,
+        examDate: new Date(Date.now() + 10 * 24 * 60 * 60 * 1000),
         previousScore: 45,
-        hoursPerDay: 5 
+        hoursPerDay: 5
       }
     ]);
 
-    
+
     const sessions = [];
     const now = new Date();
     for(let i = 5; i >= 1; i--) {
         const date = new Date(now);
         date.setDate(now.getDate() - i);
-        
+
         subjects.forEach((sub, sIdx) => {
             const baseHours = sub.hoursPerDay || 2;
-            const variance = (sIdx % 2 === 0 ? 0.4 : -0.3) * (i / 2); 
+            const variance = (sIdx % 2 === 0 ? 0.4 : -0.3) * (i / 2);
             sessions.push({
                 userId,
                 subjectId: sub._id,

@@ -45,7 +45,7 @@ export default function Auth() {
           </div>
           <span className="font-semibold text-primary text-xl tracking-tight">StudyGen AI</span>
         </div>
-        
+
         <div className="max-w-xl relative z-10 flex-1 flex flex-col justify-center mt-[-10vh]">
           <h1 className="text-6xl font-bold text-text-main mb-6 leading-tight tracking-tight">
             Master your mind, <br />
@@ -94,9 +94,9 @@ export default function Auth() {
             {!isLogin && (
               <div>
                 <label className="block text-xs font-semibold text-text-muted mb-2 uppercase tracking-wide">Public Name</label>
-                <input 
-                  type="text" 
-                  placeholder="Julian M." 
+                <input
+                  type="text"
+                  placeholder="Julian M."
                   className="block w-full px-5 py-3.5 bg-surface-bg border-transparent rounded-xl text-text-main placeholder-text-muted/60 focus:bg-surface focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all text-sm font-medium outline-none border hover:border-surface-border"
                   value={formData.name}
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
@@ -111,9 +111,9 @@ export default function Auth() {
                 <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
                   <Mail className="h-5 w-5 text-text-muted" />
                 </div>
-                <input 
-                  type="email" 
-                  placeholder="name@example.com" 
+                <input
+                  type="email"
+                  placeholder="name@example.com"
                   className="block w-full pl-12 pr-4 py-3.5 bg-surface-bg border-transparent rounded-xl text-text-main placeholder-text-muted/60 focus:bg-surface focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all text-sm font-medium outline-none border hover:border-surface-border"
                   value={formData.email}
                   onChange={(e) => setFormData({ ...formData, email: e.target.value })}
@@ -131,9 +131,9 @@ export default function Auth() {
                 <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
                   <Lock className="h-5 w-5 text-text-muted" />
                 </div>
-                <input 
-                  type="password" 
-                  placeholder="••••••••" 
+                <input
+                  type="password"
+                  placeholder="••••••••"
                   className="block w-full pl-12 pr-12 py-3.5 bg-surface-bg border-transparent rounded-xl text-text-main placeholder-text-muted/60 focus:bg-surface focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all text-sm font-medium outline-none border hover:border-surface-border"
                   value={formData.password}
                   onChange={(e) => setFormData({ ...formData, password: e.target.value })}
@@ -145,8 +145,8 @@ export default function Auth() {
               </div>
             </div>
 
-            <button 
-              type="submit" 
+            <button
+              type="submit"
               disabled={loading}
               className="w-full bg-primary hover:bg-primary-dark text-white font-semibold py-3.5 rounded-xl shadow-lg shadow-primary/30 transition-all active:scale-[0.98] mt-2 disabled:opacity-50"
             >
@@ -156,8 +156,8 @@ export default function Auth() {
 
           <div className="mt-10">
             <p className="text-center text-sm text-text-muted font-medium">
-              {isLogin ? "Don't have an account?" : "Already have an account?"} 
-              <button 
+              {isLogin ? "Don't have an account?" : "Already have an account?"}
+              <button
                 onClick={() => setIsLogin(!isLogin)}
                 className="ml-1 font-semibold text-primary hover:text-primary-dark transition-transform active:scale-95 inline-block"
               >
@@ -166,7 +166,7 @@ export default function Auth() {
             </p>
           </div>
         </div>
-        
+
         <div className="absolute bottom-6 flex gap-8 text-xs font-semibold text-text-muted">
           <a href="#" className="hover:text-text-main transition-colors hover:scale-105 active:scale-95 block">Privacy Policy</a>
           <a href="#" className="hover:text-text-main transition-colors hover:scale-105 active:scale-95 block">Terms of Service</a>

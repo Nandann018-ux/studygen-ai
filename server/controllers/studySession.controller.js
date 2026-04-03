@@ -5,8 +5,8 @@ const Subject = require('../models/Subject');
 async function saveSession(req, res) {
   try {
     const { subjectId, name, subjectName, plannedHours, actualHours, completion, date, planId } = req.body;
-    
-    
+
+
     const finalName = name || subjectName;
 
     if (!subjectId || !finalName || plannedHours === undefined || actualHours === undefined) {
@@ -23,7 +23,7 @@ async function saveSession(req, res) {
       date: date || new Date(),
     });
 
-    
+
     if (planId) {
       console.log(`[Session] Marking StudyPlan ${planId} as completed.`);
       const updatedPlan = await StudyPlan.findByIdAndUpdate(
@@ -49,7 +49,7 @@ async function saveSession(req, res) {
       if (subject && subject.syllabusRemaining > 0) {
         const reduction = (Number(actualHours) * (Number(completion || 100) / 100)) * 2;
         const newSyllabusRemaining = Math.max(0, subject.syllabusRemaining - reduction);
-        
+
         console.log(`[Neural Sync] Subject ${subject.name} progress: ${subject.syllabusRemaining}% -> ${newSyllabusRemaining.toFixed(1)}%`);
         await Subject.findByIdAndUpdate(subjectId, { syllabusRemaining: newSyllabusRemaining });
       }
@@ -57,7 +57,7 @@ async function saveSession(req, res) {
       console.warn("Subject progress sync failed:", e.message);
     }
 
-    
+
     try {
       const { triggerAutoRetrain } = require('../services/mlService');
       if (triggerAutoRetrain) triggerAutoRetrain();

@@ -1,78 +1,71 @@
-# StudyGen AI
+# 🧠 StudyGen AI: Neural Study Optimization
 
-### Intelligent Study Orchestration and Cognitive Analytics
-
-StudyGen AI is a full-stack platform designed to optimize academic performance through heuristic-based study planning and real-time cognitive analytics. The system provides a centralized environment for students to manage intensive study schedules, track mastery across multiple subjects, and utilize data-driven insights to refine their learning process.
+StudyGen AI is a state-of-the-art study productivity platform that leverages machine learning to synthesize personalized, high-performance study paths. By analyzing cognitive load, subject difficulty, and historical performance, the platform "optimizes" your neural commitment to ensure maximum retention with minimum burnout.
 
 ---
 
-## Technical Overview
+## 🛠️ Technical Infrastructure
 
-The application is built on a modern distributed architecture, integrating a high-performance React frontend with a scalable Node.js backend. It employs a custom heuristic engine to calculate optimal study distributions based on subject difficulty and user-defined cognitive thresholds.
+### Frontend Architecture
+Built for sub-millisecond responsiveness and a premium, dark-themed aesthetic.
+- **Core**: [React 19](https://reactjs.org/) (Vite)
+- **Styling**: [Tailwind CSS 3.4](https://tailwindcss.com/)
+- **Visualizations**: [Chart.js](https://www.chartjs.org/) via `react-chartjs-2`
+- **Iconography**: [Lucide React](https://lucide.dev/)
+- **State Management**: React Context + Hooks for real-time neural identity synchronization.
 
----
+### ⚙️ Backend Engine
+High-concurrency Node.js sanctuary for data persistence and ML coordination.
+- **Runtime**: [Node.js](https://nodejs.org/)
+- **Framework**: [Express 5](https://expressjs.com/)
+- **Database**: [MongoDB](https://www.mongodb.com/) via [Mongoose 9](https://mongoosejs.com/)
+- **Security**: JWT (JSON Web Tokens) for secure, stateless authentication.
 
-## Core Features
+### 🤖 ML & Analytics (Neural Laboratory)
+A Python-driven intelligence layer that recalibrates your study trajectory based on real-world data.
+- **Framework**: [Flask](https://flask.palletsprojects.com/)
+- **Data Science**: [Scikit-learn](https://scikit-learn.org/), [Pandas](https://pandas.pydata.org/), [NumPy](https://numpy.org/)
+- **Models**:
+  - **Commitment Allocator**: `RandomForestRegressor` (Estimates optimal focus blocks).
+  - **Nueral Classifier**: `LogisticRegression` (Determines subject difficulty cohorts).
+  - **Predictive Optimizer**: `LinearRegression` (Forecasts performance based on study density).
+- **Core DL**: [PyTorch / Transformers](https://pytorch.org/) (Used for AI-generated study tips and semantic analysis).
 
-### Neural Dashboard and Analytics
-The dashboard serves as the central command center, providing real-time visualization of study progress. Using high-contrast data representations, it allows users to monitor their time allocation and subject mastery levels without distraction.
-
-### Adaptive Study Planning
-The integrated planning module generates dynamic daily schedules. It prioritizes subjects based on workload intensity and historical progress, ensuring that users focus on areas requiring the most cognitive attention.
-
-### Integrated Focus Management
-The platform includes a dedicated Focus Mode, implementing standard deep-work protocols to minimize context switching and maximize session efficiency.
-
-### Cognitive Configuration
-Users can define their specific learning constraints, including daily study limits and confidence thresholds, allowing the system to tailor its recommendations to individual performance baselines.
-
----
-
-## Technology Stack
-
-### Frontend
-- React 19 (Vite)
-- Tailwind CSS (Design System)
-- Lucide React (Iconography)
-- Recharts (Data Visualization)
-
-### Backend
-- Node.js and Express.js
-- MongoDB (Data Persistence)
-- JWT (Authentication and Security)
-- Bcrypt.js (Credential Encryption)
+### 📊 Dataset
+The platform utilizes a structured dataset (`study_data.csv`) containing historical focus patterns and success metrics, which is continuously updated with your active study sessions to refine the local inference model.
 
 ---
 
-## Directory Structure
+## 🚀 Getting Started
 
-- `client/`: React-based user interface and state management.
-- `server/`: Express API services and database controllers.
-- `ml-service/`: Heuristic logic and processing modules.
-- `docs/`: Technical documentation and design guidelines.
+1. **Environment Setup**:
+   ```bash
+   # In root
+   npm install
+   # In /server
+   npm install
+   # In /client
+   npm install
+   # In /ml-service
+   pip install -r requirements.txt
+   ```
 
----
-
-## Installation and Deployment
-
-### Backend Setup
-1. Navigate to the server directory: `cd server`
-2. Install dependencies: `npm install`
-3. Configure environment variables in a `.env` file (JWT_SECRET, MONGODB_URI).
-4. Start the development server: `npm run dev`
-
-### Frontend Setup
-1. Navigate to the client directory: `cd client`
-2. Install dependencies: `npm install`
-3. Start the Vite development environment: `npm run dev`
-
----
-
-## Design Language
-
-StudyGen AI utilizes a "Neural Laboratory" design language, characterized by a high-contrast Light Mode default, slate-based color palettes, and minimalist glassmorphism. The interface is engineered to reduce cognitive load while maintaining a premium, professional aesthetic.
+2. **Launch Neural Infrastructure**:
+   ```bash
+   # Start Server (Port 5001)
+   npm run dev:server
+   
+   # Start Frontend (Port 5173)
+   npm run dev:client
+   
+   # Start ML Service (Port 5000)
+   python ml-service/train.py && python ml-service/predict.py
+   ```
 
 ---
 
-## License
-Distributed under the MIT License.
+## 🔬 Neural Principles
+StudyGen AI adheres to several core cognitive principles:
+- **Hebbian Learning**: Reinforcing subjects through iterative, high-focus blocks.
+- **Progressive Overload**: Gradually increasing "Neural Load" as proficiency increases.
+- **Delta Optimization**: Minimizing the gap between "Planned Commitment" and "Actual Intensity".

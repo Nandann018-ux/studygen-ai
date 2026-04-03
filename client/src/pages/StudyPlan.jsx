@@ -18,9 +18,9 @@ export default function StudyPlan() {
   const fetchPlan = async () => {
     try {
       const response = await api.get('/plans');
-      
+
       const planWithTips = await Promise.all(response.data.map(async (task, i) => {
-        if (i < 3) { 
+        if (i < 3) {
           try {
             const currentDiff = (task.difficulty !== undefined && task.difficulty !== null) ? task.difficulty : 3;
             const tipsRes = await api.post('/ml/tips', { name: task.name || task.subjectName, difficulty: currentDiff });
@@ -65,13 +65,13 @@ export default function StudyPlan() {
       showFeedback("Neural Node Required: Add subjects to generate a plan 🧠");
       return;
     }
-    
+
     setGenerating(true);
     console.log("Starting plan regeneration...");
     try {
       const response = await api.post('/plans/generate');
       console.log("Plan generated successfully:", response.data);
-      await fetchPlan(); 
+      await fetchPlan();
       showFeedback("Neural pathways recalibrated 🧠");
     } catch (err) {
       const errMsg = err.response?.data?.message || err.message || "Failed to generate plan";
@@ -88,9 +88,9 @@ export default function StudyPlan() {
 
   const handleMarkCompleted = (task) => {
     setSelectedTask(task);
-    setSessionData({ 
-      actualHours: Number(task.allocatedHours).toFixed(1), 
-      completion: 100 
+    setSessionData({
+      actualHours: Number(task.allocatedHours).toFixed(1),
+      completion: 100
     });
     setShowModal(true);
   };
@@ -99,10 +99,10 @@ export default function StudyPlan() {
     e.preventDefault();
     setSubmitting(true);
     try {
-      // Step 1: Mark the plan item as completed via dedicated endpoint
+
       await api.patch(`/plans/${selectedTask._id}/complete`);
 
-      // Step 2: Save the study session data
+
       await api.post('/session', {
         subjectId: selectedTask.subjectId,
         name: selectedTask.name || selectedTask.subjectName,
@@ -113,7 +113,7 @@ export default function StudyPlan() {
         planId: selectedTask._id
       });
 
-      // Force refresh from database to confirm persistence and remove completed items
+
       await fetchPlan();
       setShowModal(false);
       showFeedback("Neural state captured successfully 📈");
@@ -240,15 +240,15 @@ export default function StudyPlan() {
                           </ul>
                         </div>
                       )}
-                      
+
                       <div className="flex items-center gap-6">
-                        <button 
+                        <button
                           onClick={() => handleStartFocus(task)}
                           className="flex items-center gap-2 text-primary font-bold text-sm tracking-wide hover:text-primary-light transition-all active:scale-95 group/btn"
                         >
                           <Play size={16} className="fill-current group-hover/btn:scale-110 transition-transform" /> Start Focus Session
                         </button>
-                        <button 
+                        <button
                           onClick={() => handleMarkCompleted(task)}
                           className="flex items-center gap-2 text-text-muted font-bold text-sm tracking-wide hover:text-text-main transition-all active:scale-95"
                         >
@@ -285,13 +285,13 @@ export default function StudyPlan() {
             )}
 
             <div className="pt-8 pl-14">
-              <button 
+              <button
                 onClick={handleRegenerate}
                 disabled={generating}
                 className="w-full bg-primary hover:bg-primary-light text-[#0a0b10] py-5 rounded-full font-bold text-lg tracking-tight transition-all shadow-xl shadow-primary/20 flex items-center justify-center gap-2 group disabled:opacity-50 disabled:cursor-not-allowed active:scale-[0.98] hover:shadow-primary/40 overflow-hidden relative"
               >
                 <div className={`absolute inset-0 bg-white/20 transition-transform duration-1000 ${generating ? 'translate-x-0' : '-translate-x-full'}`}></div>
-                <Wand2 size={20} className={generating ? "animate-spin" : "group-hover:rotate-12 transition-transform"} /> 
+                <Wand2 size={20} className={generating ? "animate-spin" : "group-hover:rotate-12 transition-transform"} />
                 {generating ? 'Rebuilding Cognitive Grid...' : 'Regenerate Neural Plan'}
               </button>
             </div>
@@ -335,7 +335,7 @@ export default function StudyPlan() {
       {showModal && (
         <div className="fixed inset-0 bg-[#0a0b10]/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-in fade-in zoom-in-95 duration-200">
           <div className="bg-surface border border-surface-border rounded-[32px] p-10 w-full max-w-md shadow-2xl relative">
-            <button 
+            <button
               onClick={() => setShowModal(false)}
               className="absolute top-8 right-8 text-text-muted hover:text-text-main hover:bg-surface-hover p-2 rounded-full transition-all"
             >
@@ -343,12 +343,12 @@ export default function StudyPlan() {
             </button>
             <h2 className="text-3xl font-bold text-text-main mb-2">Log Session</h2>
             <p className="text-text-muted text-sm mb-8">Update your neural pattern with actual study data.</p>
-            
+
             <form onSubmit={handleSubmitSession} className="space-y-6">
               <div>
                 <label className="block text-xs font-bold text-text-muted mb-2 uppercase tracking-wide">Actual Time Focus (Hours)</label>
-                <input 
-                  type="number" 
+                <input
+                  type="number"
                   step="0.1"
                   className="w-full bg-surface-hover border border-surface-border rounded-xl px-5 py-4 text-text-main text-sm focus:outline-none focus:border-primary/50 transition-all font-bold"
                   value={sessionData.actualHours}
@@ -359,9 +359,9 @@ export default function StudyPlan() {
 
               <div>
                 <label className="block text-xs font-bold text-text-muted mb-2 uppercase tracking-wide">Completion Rate ({sessionData.completion}%)</label>
-                <input 
-                  type="range" 
-                  min="0" 
+                <input
+                  type="range"
+                  min="0"
                   max="100"
                   className="w-full accent-primary bg-surface-hover rounded-full"
                   value={sessionData.completion}

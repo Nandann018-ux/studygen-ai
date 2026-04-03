@@ -3,15 +3,15 @@ const StudyPlan = require('../models/StudyPlan');
 const StudySession = require('../models/StudySession');
 async function addSubject(req, res) {
   try {
-    const { 
-      name, 
-      difficulty, 
-      proficiency, 
-      syllabusRemaining, 
+    const {
+      name,
+      difficulty,
+      proficiency,
+      syllabusRemaining,
       examDate,
       previousScore,
       hoursPerDay,
-      revisionRequired 
+      revisionRequired
     } = req.body;
 
     if (!name) {
@@ -47,21 +47,21 @@ async function getSubjects(req, res) {
 async function updateSubject(req, res) {
   try {
     const { id } = req.params;
-    const { 
-      name, 
-      difficulty, 
-      proficiency, 
-      syllabusRemaining, 
+    const {
+      name,
+      difficulty,
+      proficiency,
+      syllabusRemaining,
       examDate,
       previousScore,
       hoursPerDay,
-      revisionRequired 
+      revisionRequired
     } = req.body;
 
     const updatedSubject = await Subject.findOneAndUpdate(
       { _id: id, userId: req.user.userId },
-      { 
-        name, 
+      {
+        name,
         difficulty: Number(difficulty),
         proficiency: Number(proficiency),
         syllabusRemaining: Number(syllabusRemaining),
@@ -87,15 +87,15 @@ async function updateSubject(req, res) {
 async function deleteSubject(req, res) {
   try {
     const { id } = req.params;
-    
-    
+
+
     const deletedSubject = await Subject.findOneAndDelete({ _id: id, userId: req.user.userId });
 
     if (!deletedSubject) {
       return res.status(404).json({ message: 'Subject not found or unauthorized' });
     }
 
-    
+
     await StudyPlan.deleteMany({ subjectId: id, userId: req.user.userId });
     await StudySession.deleteMany({ subjectId: id, userId: req.user.userId });
 

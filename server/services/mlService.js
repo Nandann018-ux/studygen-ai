@@ -9,7 +9,7 @@ function runAIScript(task, params) {
     const scriptPath = path.join(__dirname, '..', '..', 'ml-service', 'predict.py');
     const args = [scriptPath, '--task', task];
 
-    
+
     if (params.difficulty !== undefined) args.push('--difficulty', params.difficulty.toString());
     if (params.proficiency !== undefined) args.push('--proficiency', params.proficiency.toString());
     if (params.syllabusRemaining !== undefined) args.push('--syllabus', params.syllabusRemaining.toString());
@@ -55,7 +55,7 @@ function fallbackPredictor({ difficulty, syllabusRemaining, daysLeft }) {
     const complexityWeight = (difficulty / 5) * 2.0 + 1.0;
     const loadWeight = (syllabusRemaining / 100) * 2.5;
     const urgencyMultiplier = 1 + (2 / (Math.sqrt(daysLeft + 1)));
-    
+
     let predictedHours = (complexityWeight + loadWeight) * (urgencyMultiplier / 2);
     return Math.min(6, Math.max(0.5, parseFloat(predictedHours.toFixed(1))));
   } catch (err) {
@@ -104,9 +104,9 @@ async function predictStudyHours({ userId, subjectId, difficulty, syllabusRemain
     console.error('Error fetching ML features:', dbErr.message);
   }
 
-  const reasons = generateReasoning({ 
-    difficulty: safeDifficulty, 
-    syllabusRemaining: safeSyllabus, 
+  const reasons = generateReasoning({
+    difficulty: safeDifficulty,
+    syllabusRemaining: safeSyllabus,
     daysLeft: safeDays,
     consistencyScore,
     pastAvgHours
@@ -141,10 +141,10 @@ async function classifySubject(subjectData) {
     const diff = Number(subjectData.difficulty || 3);
     const prevScore = Number(subjectData.previousScore || 0);
 
-    
+
     if (prof >= 4 && prevScore >= 80) return "Strong";
     if (prof >= 4 || prevScore >= 85) return "Strong";
-    
+
     const scoreDiff = prof - diff;
     if (scoreDiff <= -2) return "Weak";
     if (scoreDiff === -1 && prevScore < 70) return "Weak";
@@ -161,12 +161,12 @@ async function predictExamScore(subjectData) {
     const prof = Number(subjectData.proficiency || 3);
     const diff = Number(subjectData.difficulty || 3);
     const prevScore = Number(subjectData.previousScore || 0);
-    
-    
+
+
     const baseline = prevScore > 0 ? prevScore : 70;
     const diffMod = (prof - diff) * 4;
     const loadMod = (Number(subjectData.syllabusRemaining || 0) / 100) * -5;
-    
+
     return Math.min(100, Math.max(0, baseline + diffMod + loadMod));
   }
   return result.predictedScore;
@@ -198,8 +198,8 @@ async function getUserInsights(userId) {
 
   try {
     const sessions = await StudySession.find({ userId }).sort({ date: 1 }).lean();
-    
-    
+
+
     if (sessions.length === 0) {
       const allSubjects = await Subject.find({ userId }).lean();
       if (allSubjects.length > 0) {
@@ -220,7 +220,7 @@ async function getUserInsights(userId) {
 
     const recent = sessions.slice(-5);
     const previous = sessions.slice(-10, -5);
-    
+
     const calculateConsistency = (list) => {
        if (list.length === 0) return 0;
        const planned = list.reduce((s, h) => s + (h.plannedHours || 0), 0);
@@ -230,24 +230,24 @@ async function getUserInsights(userId) {
 
     const recentCons = calculateConsistency(recent);
     const prevCons = calculateConsistency(previous);
-    
+
     let trend = 0;
     if (previous.length > 0) {
         trend = recentCons - prevCons;
     } else if (recent.length > 0) {
-        trend = recentCons; 
+        trend = recentCons;
     }
 
     const allSubjects = await Subject.find({ userId }).lean();
     const subjectStats = {};
-    
+
     allSubjects.forEach(s => {
        const d = (s.difficulty !== undefined && s.difficulty !== null) ? Number(s.difficulty) : 3;
        const p = (s.proficiency !== undefined && s.proficiency !== null) ? Number(s.proficiency) : 3;
-       subjectStats[s._id] = { 
+       subjectStats[s._id] = {
           name: s.name || s.subjectName || "Unknown",
-          score: (p - d), 
-          sessions: 0 
+          score: (p - d),
+          sessions: 0
        };
     });
 
@@ -255,13 +255,13 @@ async function getUserInsights(userId) {
        if (subjectStats[s.subjectId]) {
           subjectStats[s.subjectId].sessions += 1;
           const ratio = s.plannedHours > 0 ? (s.actualHours / s.plannedHours) : 1;
-          subjectStats[s.subjectId].score += (ratio - 1) * 2; 
+          subjectStats[s.subjectId].score += (ratio - 1) * 2;
        }
     });
 
     const sorted = Object.values(subjectStats).sort((a, b) => b.score - a.score);
-    
-    
+
+
     const dailyMap = {};
     sessions.slice(-7).forEach(s => {
        const day = s.date.toISOString().split('T')[0];
@@ -290,10 +290,10 @@ async function getUserInsights(userId) {
   }
 }
 
-module.exports = { 
-  predictStudyHours, 
-  classifySubject, 
-  predictExamScore, 
+module.exports = {
+  predictStudyHours,
+  classifySubject,
+  predictExamScore,
   generateAITips,
-  getUserInsights 
+  getUserInsights
 };

@@ -40,19 +40,19 @@ export default function Analytics() {
           api.get('/plans'),
           api.get('/ml/insights')
         ]);
-        
+
         const subs = subjectsRes.data;
         setSubjects(subs);
         setPlan(planRes.data);
         setInsights(insightsRes.data);
 
-        
+
         if (subs.length > 0) {
           const weakestSubject = [...subs].sort((a, b) => b.syllabusRemaining - a.syllabusRemaining)[0];
           const scoreRes = await api.post('/ml/predict-score', weakestSubject);
           setPredictedScore(scoreRes.data.predictedScore);
-          
-          
+
+
           setTipsLoading(true);
           try {
             const tipsRes = await api.post('/ml/tips', {
@@ -75,21 +75,21 @@ export default function Analytics() {
     fetchAnalyticsData();
   }, []);
 
-  
 
-  
+
+
   const sortedByNeeds = [...subjects].sort((a, b) => b.syllabusRemaining - a.syllabusRemaining);
   const weakestSubjectName = sortedByNeeds.length > 0 ? (sortedByNeeds[0].name || sortedByNeeds[0].subjectName) : 'None';
   const weakestSyllabus = sortedByNeeds.length > 0 ? sortedByNeeds[0].syllabusRemaining : 0;
 
-  
+
   const allocationsMap = {};
   plan.forEach(item => {
     const name = item.name || item.subjectName;
     allocationsMap[name] = (allocationsMap[name] || 0) + item.allocatedHours;
   });
-  
-  
+
+
   let sortedAllocations = Object.entries(allocationsMap)
     .sort((a, b) => b[1] - a[1])
     .map(([name, hours]) => ({ name, hours }));
@@ -97,8 +97,8 @@ export default function Analytics() {
   const maxHours = sortedAllocations.length > 0 ? sortedAllocations[0].hours : 1;
 
   const totalAllocated = plan.reduce((acc, curr) => acc + curr.allocatedHours, 0) || 1;
-  
-  
+
+
   const highIntensityHours = plan.filter(p => p.allocatedHours >= 3).reduce((acc, curr) => acc + curr.allocatedHours, 0);
   const deepFlowPct = plan.length > 0 ? Math.round((highIntensityHours / totalAllocated) * 100) : 0;
 
@@ -134,12 +134,12 @@ export default function Analytics() {
       tooltip: { enabled: true }
     },
     scales: {
-      x: { 
+      x: {
         grid: { display: false },
         ticks: { color: '#8e92a4', font: { size: 10, weight: 'bold' } },
         border: { display: false }
       },
-      y: { 
+      y: {
         display: false,
         min: 0,
         max: 100
@@ -296,11 +296,11 @@ export default function Analytics() {
             <h3 className="text-xl font-bold text-text-main tracking-tight mb-8">Study Allocation</h3>
             <div className="space-y-6">
               {sortedAllocations.length > 0 ? sortedAllocations.slice(0, 5).map((item, idx) => (
-                <ProgressBar 
+                <ProgressBar
                   key={idx}
-                  label={item.name} 
-                  val={`${item.hours.toFixed(1)}h`} 
-                  pct={(item.hours / maxHours) * 100} 
+                  label={item.name}
+                  val={`${item.hours.toFixed(1)}h`}
+                  pct={(item.hours / maxHours) * 100}
                 />
               )) : (
                 <div className="text-text-muted text-sm border-2 border-dashed border-surface-border rounded-xl p-4 text-center">
@@ -309,7 +309,7 @@ export default function Analytics() {
               )}
             </div>
           </div>
-          
+
           <div className="mt-8 bg-primary/5 border border-primary/20 rounded-2xl p-5 flex gap-4">
             <div className="mt-1 flex-shrink-0"><Sparkles size={16} className="text-primary" /></div>
             <div>
@@ -325,21 +325,21 @@ export default function Analytics() {
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
         <div className="lg:col-span-8 bg-surface rounded-[40px] p-1.5 border border-surface-border shadow-xl group overflow-hidden relative">
           <div className="absolute -top-24 -right-24 w-64 h-64 bg-primary/10 blur-[100px] rounded-full pointer-events-none group-hover:bg-primary/20 transition-all duration-1000"></div>
-          
+
           <div className="bg-surface-sidebar/40 backdrop-blur-2xl rounded-[38px] p-10 h-full flex flex-col md:flex-row items-center justify-between gap-12 border border-surface-border relative z-10">
             <div className="w-64 h-64 relative shrink-0 flex items-center justify-center">
                {}
                <div className="absolute inset-4 rounded-full border border-surface-border bg-gradient-to-b from-transparent to-surface-hover/20 shadow-inner"></div>
-               
+
                {}
                <div className="w-full h-full p-2 relative z-10">
-                 <Doughnut data={doughnutData} options={{ 
-                   responsive: true, 
+                 <Doughnut data={doughnutData} options={{
+                   responsive: true,
                    maintainAspectRatio: false,
-                   cutout: '88%', 
+                   cutout: '88%',
                    rotation: -90,
                    circumference: 360,
-                   plugins: { 
+                   plugins: {
                      tooltip: { enabled: false },
                      legend: { display: false }
                    },
@@ -352,11 +352,11 @@ export default function Analytics() {
                  <span className="text-[52px] font-bold text-text-main tracking-tighter leading-none mb-1 drop-shadow-[0_10_20px_rgba(0,208,132,0.2)]">{deepFlowPct}%</span>
                  <span className="text-[9px] font-bold tracking-[0.4em] text-primary uppercase opacity-80 pl-[0.4em]">Deep Flow</span>
                </div>
-               
+
                {}
                <div className="absolute top-10 left-10 w-2 h-2 rounded-full bg-primary shadow-[0_0_20px_rgba(0,208,132,1)] animate-pulse z-30"></div>
             </div>
-  
+
             <div className="flex-1">
               <div className="flex items-center gap-3 mb-6">
                 <span className="text-[10px] font-black text-primary px-3 py-1.5 rounded-full bg-primary/10 tracking-widest uppercase border border-primary/20">
@@ -366,15 +366,15 @@ export default function Analytics() {
                   {[1,2,3].map(i => <div key={i} className="w-1 h-1 rounded-full bg-primary/40"></div>)}
                 </div>
               </div>
-              
+
               <h2 className="text-[36px] font-bold text-text-main tracking-tight leading-[1.1] mb-5">
                 Your neural latency is <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary to-emerald-400">decreasing.</span>
               </h2>
-              
+
               <p className="text-text-muted font-medium leading-relaxed max-w-md mb-10 text-[15px]">
                 Current algorithms indicate that <span className="font-bold text-text-main">{deepFlowPct}%</span> of your schedule is optimized for dense deep-work, facilitating rapid <span className="text-primary italic">synaptogenesis.</span>
               </p>
-              
+
               <div className="grid grid-cols-2 gap-8 border-t border-surface-border pt-8">
                 <div>
                   <span className="text-[10px] font-bold text-text-muted tracking-[0.2em] uppercase mb-1.5 block opacity-60">Peak Performance</span>
@@ -394,7 +394,7 @@ export default function Analytics() {
         <div className="lg:col-span-4 flex flex-col gap-6">
           <div className="bg-primary/5 dark:bg-gradient-to-br from-[#00d084] to-[#088055] rounded-[32px] p-8 border border-primary/20 relative overflow-hidden group h-full flex flex-col justify-between">
             <Sparkles size={120} className="absolute -right-6 -bottom-6 text-primary/10 dark:text-white/10 group-hover:scale-110 transition-transform duration-700 pointer-events-none" />
-            
+
             <div className="relative z-10 h-full flex flex-col">
               <div className="flex items-center gap-3 mb-6">
                  <div className="p-2 bg-primary/20 rounded-xl">
@@ -422,13 +422,13 @@ export default function Analytics() {
                 )}
               </div>
             </div>
-            
+
             <div className="flex justify-between items-center relative z-10 mt-8">
               <div className="flex -space-x-2">
                 <div className="w-8 h-8 rounded-full border-2 border-primary bg-surface flex items-center justify-center text-[10px] font-bold text-text-main">AI</div>
                 <div className="w-8 h-8 rounded-full border-2 border-primary bg-surface/40 flex items-center justify-center text-[10px] font-bold text-text-muted">ML</div>
               </div>
-              <button 
+              <button
                 onClick={() => window.location.href='/subjects'}
                 className="bg-primary hover:bg-primary-light text-[#0a0b10] px-4 py-2 rounded-full text-xs font-bold tracking-wider uppercase transition-all active:scale-95 hover:scale-105 inline-block border border-transparent shadow-lg shadow-primary/20"
               >

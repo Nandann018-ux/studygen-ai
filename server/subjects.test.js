@@ -61,10 +61,10 @@ test("GET all subjects for user should succeed", async () => {
         .get("/api/subjects")
         .set("Authorization", "Bearer " + mockUser.validToken);
 
-    expect(result.status).toBe(200);   
+    expect(result.status).toBe(200);
     expect(result.body).toBeInstanceOf(Array);
     expect(result.body.length).toBe(2);
-    
+
     const mathSub = result.body.find(s => s.name === "Math" || s.subjectName === "Math");
     expect(mathSub).toBeDefined();
 });
@@ -81,7 +81,7 @@ test("POST valid subject should succeed", async () => {
             examDate: "2024-12-31"
         });
 
-    expect(result.status).toBe(201);   
+    expect(result.status).toBe(201);
     expect(result.body.name).toBe("History");
 });
 
@@ -97,7 +97,7 @@ test("POST without name should fail", async () => {
         });
 
     expect(result.status).toBe(400);
-    
+
     expect(result.body.message).toBe("name is required");
 });
 
