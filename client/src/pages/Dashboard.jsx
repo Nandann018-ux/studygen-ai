@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Book, Clock, AlertTriangle, Brain, Sparkles, Edit3, Plus, Timer, TrendingUp, TrendingDown } from 'lucide-react';
+import { Book, Clock, AlertTriangle, Brain, Sparkles, Edit3, Plus, Timer, TrendingUp, TrendingDown, X, CheckCircle2, Calendar, Target, ChevronRight } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import {
   Chart as ChartJS,
@@ -31,6 +31,8 @@ export default function Dashboard() {
   const [insights, setInsights] = useState(null);
   const [loading, setLoading] = useState(true);
   const [userName, setUserName] = useState('Focus');
+  const [showDeadlineModal, setShowDeadlineModal] = useState(false);
+  const [showSubjectModal, setShowSubjectModal] = useState(false);
 
   useEffect(() => {
     // Get user name from storage
@@ -50,12 +52,8 @@ export default function Dashboard() {
           api.get('/ml/insights')
         ]);
 
-        // Prioritize seeded data from insights to avoid race conditions
-        const finalSubjects = insightsRes.data.seededSubjects || subjectsRes.data;
-        const finalPlan = insightsRes.data.seededPlan || planRes.data;
-
-        setSubjects(finalSubjects);
-        setPlan(finalPlan);
+        setSubjects(subjectsRes.data);
+        setPlan(planRes.data);
         setInsights(insightsRes.data);
         
         console.log("Dashboard state synchronized with neural engine.");
@@ -90,13 +88,13 @@ export default function Dashboard() {
     if (!s.examDate) return false;
     const d = new Date(s.examDate);
     return d >= now && d <= fourteenDaysFromNow;
-  });
+  }).sort((a, b) => new Date(a.examDate) - new Date(b.examDate));
   
   const upcomingDeadlinesCount = relevantSubjects.length;
   const hasUrgentDeadline = relevantSubjects.some(s => new Date(s.examDate) <= threeDaysFromNow);
   
-  const weakestSubject = loading ? 'Analyzing...' : (insights?.weakest || 'N/A');
-  const strongestSubject = loading ? 'Analyzing...' : (insights?.strongest || 'N/A');
+  const weakestSubject = loading ? (subjects.length > 0 ? 'Analyzing...' : 'N/A') : (insights?.weakest || 'N/A');
+  const strongestSubject = loading ? (subjects.length > 0 ? 'Analyzing...' : 'N/A') : (insights?.strongest || 'N/A');
 
   const formatTime = (timeInHours) => {
     const h = Math.floor(timeInHours);
@@ -165,12 +163,18 @@ export default function Dashboard() {
           <h1 className="text-[44px] font-bold tracking-tight text-text-main mb-3 leading-tight">
             Welcome back, <span className="text-primary tracking-tight">{userName}</span>
           </h1>
+          {loading && (
+            <div className="w-64 h-[2px] bg-primary/10 rounded-full overflow-hidden mb-4 relative">
+              <div className="absolute inset-0 bg-primary animate-pulse"></div>
+              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/50 to-transparent w-full h-full animate-shimmer" style={{ backgroundSize: '200% 100%' }}></div>
+            </div>
+          )}
           <p className="text-text-muted text-[15px] font-medium max-w-2xl">
             {loading ? 'Analyzing your recent cognitive patterns...' : (insights?.improvement || 'Neural engine initialized.')}
-            <span className="text-primary ml-2">Keep up the momentum.</span>
+            {!loading && <span className="text-primary ml-2">Keep up the momentum.</span>}
           </p>
         </div>
-        {!loading && (insights?.recentConsistency > 0 || insights?.consistencyTrend !== '0.0') && (
+        {!loading && (insights?.recentConsistency > 0 || String(insights?.consistencyTrend) !== '0.0') && (
           <div className="flex items-center gap-2 bg-primary/10 border border-primary/20 px-4 py-2 rounded-2xl animate-in zoom-in-95 duration-500">
             <TrendingUp size={16} className="text-primary" />
             <span className="text-xs font-bold text-primary uppercase tracking-widest">
@@ -187,6 +191,8 @@ export default function Dashboard() {
           badgeColor="text-primary bg-primary/10"
           title="TOTAL SUBJECTS" 
           value={loading ? '-' : subjects.length.toString()} 
+          onClick={subjects.length > 0 ? () => setShowSubjectModal(true) : undefined}
+          isActionable={subjects.length > 0}
         />
         <StatCard 
           icon={<Clock size={18} className="text-primary" />} 
@@ -196,11 +202,13 @@ export default function Dashboard() {
           value={loading ? '-' : `${totalHours}h`} 
         />
         <StatCard 
-          icon={<AlertTriangle size={18} className={upcomingDeadlinesCount > 0 ? "text-[#ff4e4e]" : "text-primary"} />} 
-          badge={upcomingDeadlinesCount > 0 ? (hasUrgentDeadline ? "Urgent" : "Tracking") : "Clear"}
-          badgeColor={upcomingDeadlinesCount > 0 ? "text-[#ff4e4e] bg-[#ff4e4e]/10 font-black" : "text-primary bg-primary/10"}
+          icon={upcomingDeadlinesCount > 0 ? <AlertTriangle size={18} className={hasUrgentDeadline ? "text-[#ff4e4e]" : "text-primary"} /> : <CheckCircle2 size={18} className="text-primary" />} 
+          badge={upcomingDeadlinesCount > 0 ? (hasUrgentDeadline ? "Urgent" : "Tracking") : "Pristine"}
+          badgeColor={upcomingDeadlinesCount > 0 ? (hasUrgentDeadline ? "text-[#ff4e4e] bg-[#ff4e4e]/10 font-black" : "text-primary bg-primary/10") : "text-primary bg-primary/10"}
           title="DEADLINES" 
-          value={loading ? '-' : upcomingDeadlinesCount.toString()} 
+          value={loading ? '-' : (upcomingDeadlinesCount > 0 ? upcomingDeadlinesCount.toString() : "All Clear! 🏆")}
+          onClick={upcomingDeadlinesCount > 0 ? () => setShowDeadlineModal(true) : undefined}
+          isActionable={upcomingDeadlinesCount > 0}
         />
         <StatCard 
           icon={<Brain size={18} className={insights?.weakest !== 'N/A' ? "text-[#ff4e4e]" : "text-[#a1a1aa]"} />} 
@@ -243,10 +251,10 @@ export default function Dashboard() {
                     intensity={item.allocatedHours > 2 ? "High Intensity" : "Standard Focus"}
                     intensityColor={item.allocatedHours > 2 ? "bg-primary/20 text-primary" : "bg-[#3b82f6]/20 text-[#3b82f6]"}
                     time={`${start} — ${end}`}
-                    title={item.subjectName}
-                    desc={item.reasons ? item.reasons[0] : `Execute ${item.allocatedHours.toFixed(1)} hours of deep focus.`}
+                    title={item.name || item.subjectName}
+                    desc={item.reasons ? item.reasons[0] : `Execute ${Number(item.allocatedHours).toFixed(1)} hours of deep focus.`}
                     progressLabel={item.reasons && item.reasons.length > 1 ? item.reasons[1] : "FOCUS LEVEL"}
-                    progress={Math.floor(Math.random() * 20 + 75)}
+                    progress={item.isCompleted ? 100 : 0}
                   />
                 )
               })
@@ -336,15 +344,127 @@ export default function Dashboard() {
           </div>
         </div>
       </div>
+
+      {/* Subject Inventory Modal */}
+      {showSubjectModal && (
+        <div className="fixed inset-0 bg-[#0a0b10]/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-in fade-in zoom-in-95 duration-200">
+          <div className="bg-surface border border-surface-border rounded-[32px] p-10 w-full max-w-lg shadow-2xl relative">
+            <button 
+              onClick={() => setShowSubjectModal(false)}
+              className="absolute top-8 right-8 text-text-muted hover:text-text-main hover:bg-surface-hover p-2 rounded-full transition-all active:scale-95"
+            >
+              <X size={24} />
+            </button>
+            
+            <div className="flex items-center gap-4 mb-8">
+               <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center">
+                  <Book size={24} className="text-primary" />
+               </div>
+               <div>
+                  <h2 className="text-2xl font-bold text-text-main">Neural Inventory</h2>
+                  <p className="text-text-muted text-sm tracking-tight font-medium">Visualization of all active subject nodes.</p>
+               </div>
+            </div>
+
+            <div className="space-y-4 max-h-[400px] overflow-y-auto pr-2 custom-scrollbar">
+               {subjects.map((sub, idx) => (
+                 <div key={sub._id || idx} className="bg-surface-sidebar border border-surface-border rounded-2xl p-5 flex justify-between items-center group hover:border-primary/30 transition-all cursor-pointer" onClick={() => navigate('/subjects')}>
+                    <div className="flex items-center gap-4">
+                       <div className="w-10 h-10 rounded-xl bg-surface flex items-center justify-center border border-surface-border group-hover:border-primary/20">
+                          <Target size={18} className="text-primary/60 group-hover:text-primary transition-colors" />
+                       </div>
+                       <span className="text-lg font-bold text-text-main group-hover:text-primary transition-colors">{sub.name || sub.subjectName || "Unnamed Node"}</span>
+                    </div>
+                    <ChevronRight size={18} className="text-text-muted opacity-0 group-hover:opacity-100 transition-all group-hover:translate-x-1" />
+                 </div>
+               ))}
+            </div>
+
+            <div className="mt-10">
+               <button 
+                 onClick={() => navigate('/subjects')}
+                 className="w-full bg-surface-sidebar text-text-main border border-surface-border py-4 rounded-xl font-bold hover:bg-surface-hover transition-all active:scale-95 text-sm uppercase tracking-widest flex items-center justify-center gap-2"
+               >
+                 <Edit3 size={16} /> Manage Subjects
+               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Deadline Detail Modal */}
+      {showDeadlineModal && (
+        <div className="fixed inset-0 bg-[#0a0b10]/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-in fade-in zoom-in-95 duration-200">
+          <div className="bg-surface border border-surface-border rounded-[32px] p-10 w-full max-w-lg shadow-2xl relative">
+            <button 
+              onClick={() => setShowDeadlineModal(false)}
+              className="absolute top-8 right-8 text-text-muted hover:text-text-main hover:bg-surface-hover p-2 rounded-full transition-all active:scale-95"
+            >
+              <X size={24} />
+            </button>
+            
+            <div className="flex items-center gap-4 mb-8">
+               <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center">
+                  <AlertTriangle size={24} className="text-primary" />
+               </div>
+               <div>
+                  <h2 className="text-2xl font-bold text-text-main">Neural Deadlines</h2>
+                  <p className="text-text-muted text-sm tracking-tight font-medium">Critical academic checkpoints detected within 14 days.</p>
+               </div>
+            </div>
+
+            <div className="space-y-4 max-h-[400px] overflow-y-auto pr-2 custom-scrollbar">
+               {relevantSubjects.map((sub, idx) => {
+                 const examDate = new Date(sub.examDate);
+                 const diffTime = examDate.getTime() - now.getTime();
+                 const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+                 const isUrgent = diffDays <= 3;
+
+                 return (
+                   <div key={sub._id || idx} className="bg-surface-sidebar border border-surface-border rounded-2xl p-5 flex justify-between items-center group hover:border-primary/30 transition-all">
+                      <div className="flex flex-col">
+                         <span className="text-lg font-bold text-text-main leading-tight mb-1">{sub.name || sub.subjectName || "Unnamed Node"}</span>
+                         <div className="flex items-center gap-2">
+                            <Calendar size={12} className="text-text-muted" />
+                            <span className="text-xs font-semibold text-text-muted">
+                               {examDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                            </span>
+                         </div>
+                      </div>
+                      <div className="flex flex-col items-end">
+                         <span className={`text-[10px] font-black uppercase tracking-widest px-2.5 py-1 rounded-full ${isUrgent ? 'bg-[#ff4e4e]/10 text-[#ff4e4e]' : 'bg-primary/10 text-primary'}`}>
+                            {diffDays === 0 ? 'Today' : `${diffDays} ${diffDays === 1 ? 'Day' : 'Days'} left`}
+                         </span>
+                         {isUrgent && <span className="text-[9px] font-bold text-[#ff4e4e] mt-1.5 animate-pulse uppercase tracking-[0.1em]">Critically Urgent</span>}
+                      </div>
+                   </div>
+                 )
+               })}
+            </div>
+
+            <div className="mt-10">
+               <button 
+                 onClick={() => navigate('/plan')}
+                 className="w-full bg-primary text-[#0a0b10] py-4 rounded-xl font-bold shadow-lg shadow-primary/20 hover:bg-primary-light transition-all active:scale-95 text-sm uppercase tracking-widest flex items-center justify-center gap-2"
+               >
+                 <Edit3 size={16} /> Optimize Study Plan
+               </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
 
-function StatCard({ icon, badge, badgeColor, title, value }) {
+function StatCard({ icon, badge, badgeColor, title, value, onClick, isActionable }) {
   return (
-    <div className="bg-surface rounded-[28px] p-6 border border-surface-border flex flex-col justify-between h-[150px] transition-all hover:border-[#383b4b]">
+    <div 
+      onClick={onClick}
+      className={`bg-surface rounded-[28px] p-6 border border-surface-border flex flex-col justify-between h-[150px] transition-all hover:border-[#383b4b] ${onClick ? 'cursor-pointer active:scale-[0.98]' : ''} relative group`}
+    >
       <div className="flex justify-between items-start">
-        <div className="w-10 h-10 rounded-[14px] bg-surface-sidebar flex items-center justify-center">
+        <div className="w-10 h-10 rounded-[14px] bg-surface-sidebar flex items-center justify-center group-hover:bg-primary/10 transition-colors">
           {icon}
         </div>
         <span className={`px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${badgeColor}`}>
@@ -353,8 +473,15 @@ function StatCard({ icon, badge, badgeColor, title, value }) {
       </div>
       <div>
         <p className="text-[10px] font-bold text-text-muted mb-1.5 uppercase tracking-widest">{title}</p>
-        <p className="text-3xl font-bold text-text-main tracking-tight">{value}</p>
+        <p className={`text-2xl font-bold text-text-main tracking-tight ${value.length > 10 ? 'text-xl' : 'text-3xl'} transition-colors ${onClick ? 'group-hover:text-primary' : ''}`}>
+          {value}
+        </p>
       </div>
+      {isActionable && (
+        <div className="absolute bottom-6 right-6 opacity-0 group-hover:opacity-60 transition-opacity">
+          <Plus size={16} className="text-primary" />
+        </div>
+      )}
     </div>
   );
 }
@@ -385,5 +512,3 @@ function SessionCard({ intensity, intensityColor, time, title, desc, progressLab
     </div>
   );
 }
-
-
