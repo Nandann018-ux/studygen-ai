@@ -22,14 +22,17 @@ export default function Sidebar({ className }) {
   return (
     <aside className={`flex flex-col ${className}`}>
       {}
-      <div className="p-8 pb-6 flex flex-col gap-1 tracking-tight">
+      <Link 
+        to="/dashboard" 
+        className="p-8 pb-6 flex flex-col gap-1 tracking-tight group hover:scale-[1.02] active:scale-95 transition-all"
+      >
         <h1 className="text-xl font-bold leading-none">
-          <span className="text-text-muted font-medium">StudyGenAI</span><br/>
+          <span className="text-text-muted font-medium group-hover:text-primary transition-colors">StudyGenAI</span><br/>
         </h1>
-        <span className="text-[9px] font-bold text-text-muted tracking-[0.2em] uppercase mt-2">
+        <span className="text-[9px] font-bold text-text-muted tracking-[0.2em] uppercase mt-2 group-hover:text-primary/60 transition-colors">
           AI-Powered Study Optimization
         </span>
-      </div>
+      </Link>
 
       <div className="flex-1 px-4 flex flex-col gap-2 mt-4">
         {menuItems.map(item => {
