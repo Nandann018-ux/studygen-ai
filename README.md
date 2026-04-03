@@ -1,71 +1,76 @@
-# 🧠 StudyGen AI: Neural Study Optimization
+# StudyGen AI: Intelligent Study Optimization
 
-StudyGen AI is a state-of-the-art study productivity platform that leverages machine learning to synthesize personalized, high-performance study paths. By analyzing cognitive load, subject difficulty, and historical performance, the platform "optimizes" your neural commitment to ensure maximum retention with minimum burnout.
+StudyGen AI is an advanced productivity platform that utilizes machine learning to generate personalized study plans. By analyzing cognitive load, subject difficulty, and historical performance data, the application optimizes study schedules to enhance retention and productivity.
 
 ---
 
-## 🛠️ Technical Infrastructure
+## Technical Infrastructure
 
 ### Frontend Architecture
-Built for sub-millisecond responsiveness and a premium, dark-themed aesthetic.
-- **Core**: [React 19](https://reactjs.org/) (Vite)
+The frontend is designed for high performance and responsiveness, utilizing a modern single-page application (SPA) architecture.
+- **Framework**: [React 19](https://reactjs.org/) (built with Vite)
 - **Styling**: [Tailwind CSS 3.4](https://tailwindcss.com/)
-- **Visualizations**: [Chart.js](https://www.chartjs.org/) via `react-chartjs-2`
+- **Data Visualization**: [Chart.js](https://www.chartjs.org/) via `react-chartjs-2`
 - **Iconography**: [Lucide React](https://lucide.dev/)
-- **State Management**: React Context + Hooks for real-time neural identity synchronization.
+- **State Management**: React Context API and custom hooks for synchronized user state and theme management.
 
-### ⚙️ Backend Engine
-High-concurrency Node.js sanctuary for data persistence and ML coordination.
+### Backend Services
+The backend is a Node.js-based REST API that facilitates data persistence and coordinates with the machine learning service.
 - **Runtime**: [Node.js](https://nodejs.org/)
 - **Framework**: [Express 5](https://expressjs.com/)
 - **Database**: [MongoDB](https://www.mongodb.com/) via [Mongoose 9](https://mongoosejs.com/)
-- **Security**: JWT (JSON Web Tokens) for secure, stateless authentication.
+- **Authentication**: JWT (JSON Web Tokens) for secure session management.
 
-### 🤖 ML & Analytics (Neural Laboratory)
-A Python-driven intelligence layer that recalibrates your study trajectory based on real-world data.
+### Machine Learning and Analytics
+A dedicated Python service provides the intelligence layer for predictive modeling and data analysis.
 - **Framework**: [Flask](https://flask.palletsprojects.com/)
-- **Data Science**: [Scikit-learn](https://scikit-learn.org/), [Pandas](https://pandas.pydata.org/), [NumPy](https://numpy.org/)
-- **Models**:
-  - **Commitment Allocator**: `RandomForestRegressor` (Estimates optimal focus blocks).
-  - **Nueral Classifier**: `LogisticRegression` (Determines subject difficulty cohorts).
-  - **Predictive Optimizer**: `LinearRegression` (Forecasts performance based on study density).
-- **Core DL**: [PyTorch / Transformers](https://pytorch.org/) (Used for AI-generated study tips and semantic analysis).
+- **Libraries**: [Scikit-learn](https://scikit-learn.org/), [Pandas](https://pandas.pydata.org/), [NumPy](https://numpy.org/)
+- **Model Implementations**:
+  - **Commitment Allocation**: `RandomForestRegressor` for estimating optimal study durations.
+  - **Difficulty Classification**: `LogisticRegression` for categorizing subject complexity.
+  - **Performance Forecasting**: `LinearRegression` for predicting exam outcomes based on study metrics.
+- **Semantic Components**: [PyTorch](https://pytorch.org/) and [Transformers](https://huggingface.co/docs/transformers/) for automated study tip generation.
 
-### 📊 Dataset
-The platform utilizes a structured dataset (`study_data.csv`) containing historical focus patterns and success metrics, which is continuously updated with your active study sessions to refine the local inference model.
-
----
-
-## 🚀 Getting Started
-
-1. **Environment Setup**:
-   ```bash
-   # In root
-   npm install
-   # In /server
-   npm install
-   # In /client
-   npm install
-   # In /ml-service
-   pip install -r requirements.txt
-   ```
-
-2. **Launch Neural Infrastructure**:
-   ```bash
-   # Start Server (Port 5001)
-   npm run dev:server
-   
-   # Start Frontend (Port 5173)
-   npm run dev:client
-   
-   # Start ML Service (Port 5000)
-   python ml-service/train.py && python ml-service/predict.py
-   ```
+### Dataset Management
+The application uses a structured dataset (`study_data.csv`) for initial model calibration. This dataset is dynamically updated with user-specific session data to continuously improve prediction accuracy.
 
 ---
 
-## 🔬 Neural Principles
-StudyGen AI adheres to several core cognitive principles:
-- **Hebbian Learning**: Reinforcing subjects through iterative, high-focus blocks.
-- **Progressive Overload**: Gradually increasing "Neural Load" as proficiency increases.
-- **Delta Optimization**: Minimizing the gap between "Planned Commitment" and "Actual Intensity".
+## Installation and Setup
+
+### 1. Environment Configuration
+Install dependencies for each component of the architecture:
+```bash
+# General workspace installation
+npm install
+
+# Server-side installation
+cd server && npm install
+
+# Client-side installation
+cd ../client && npm install
+
+# Machine Learning service installation
+cd ../ml-service && pip install -r requirements.txt
+```
+
+### 2. Runtime Instructions
+Execute the following commands to start the application components:
+```bash
+# Start Backend API (Port 5001)
+npm run dev:server
+
+# Start Frontend Application (Port 5173)
+npm run dev:client
+
+# Initialize Machine Learning Models
+cd ml-service && python train.py && python predict.py
+```
+
+---
+
+## Core Cognitive Principles
+StudyGen AI's methodology is grounded in several academic and cognitive theories:
+- **Spaced Repetition**: Iterative reinforcement through scheduled study blocks.
+- **Load Balancing**: Managing cognitive demand to prevent burnout.
+- **Predictive Analytics**: Using historical data to identify and mitigate learning gaps.
