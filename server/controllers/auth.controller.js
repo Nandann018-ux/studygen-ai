@@ -20,7 +20,7 @@ async function registerUser(req, res) {
     });
     return res.status(201).json({
       message: 'User registered successfully',
-      user: { id: user._id, name: user.name, email: user.email },
+      user: { id: user._id, name: user.name, email: user.email, avatar: user.avatar },
     });
   } catch (err) {
     console.error(err);
@@ -51,7 +51,7 @@ async function loginUser(req, res) {
     );
     return res.status(200).json({
       token,
-      user: { id: user._id, name: user.name, email: user.email },
+      user: { id: user._id, name: user.name, email: user.email, avatar: user.avatar },
     });
   } catch (err) {
     console.error(err);
@@ -69,6 +69,7 @@ async function getMe(req, res) {
       name: user.name,
       email: user.email,
       dailyStudyHours: user.dailyStudyHours || 4,
+      avatar: user.avatar || 'https://api.dicebear.com/7.x/pixel-art/svg?seed=Julian',
     });
   } catch (err) {
     console.error(err);
@@ -84,6 +85,7 @@ async function updateProfile(req, res) {
     }
     if (name) user.name = name;
     if (dailyStudyHours !== undefined) user.dailyStudyHours = dailyStudyHours;
+    if (req.body.avatar) user.avatar = req.body.avatar;
     await user.save();
     return res.status(200).json({
       message: 'Profile updated successfully',
@@ -92,6 +94,7 @@ async function updateProfile(req, res) {
         name: user.name,
         email: user.email,
         dailyStudyHours: user.dailyStudyHours,
+        avatar: user.avatar,
       },
     });
   } catch (err) {
