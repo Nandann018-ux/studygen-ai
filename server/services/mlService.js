@@ -239,9 +239,10 @@ async function getUserInsights(userId) {
     }
 
     const allSubjects = await Subject.find({ userId }).lean();
+    const activeSubjects = allSubjects.filter(s => !s.isCompleted);
     const subjectStats = {};
 
-    allSubjects.forEach(s => {
+    activeSubjects.forEach(s => {
        const d = (s.difficulty !== undefined && s.difficulty !== null) ? Number(s.difficulty) : 3;
        const p = (s.proficiency !== undefined && s.proficiency !== null) ? Number(s.proficiency) : 3;
        subjectStats[s._id] = {

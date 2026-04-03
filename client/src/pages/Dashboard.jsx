@@ -187,12 +187,12 @@ export default function Dashboard() {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
         <StatCard
           icon={<Book size={18} className="text-primary" />}
-          badge={subjects.length > 0 ? "Active" : "Add One"}
+          badge={subjects.filter(s => !s.isCompleted).length > 0 ? "Active" : "Add One"}
           badgeColor="text-primary bg-primary/10"
           title="TOTAL SUBJECTS"
-          value={loading ? '-' : subjects.length.toString()}
-          onClick={subjects.length > 0 ? () => setShowSubjectModal(true) : undefined}
-          isActionable={subjects.length > 0}
+          value={loading ? '-' : subjects.filter(s => !s.isCompleted).length.toString()}
+          onClick={subjects.filter(s => !s.isCompleted).length > 0 ? () => setShowSubjectModal(true) : undefined}
+          isActionable={subjects.filter(s => !s.isCompleted).length > 0}
         />
         <StatCard
           icon={<Clock size={18} className="text-primary" />}

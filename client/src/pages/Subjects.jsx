@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, Activity, Cpu, Brain, Banknote, FlaskConical, Sparkles, TrendingUp, X, BookOpen, Edit2, Trash2 } from 'lucide-react';
+import { Plus, Activity, Cpu, Brain, Banknote, FlaskConical, Sparkles, TrendingUp, X, BookOpen, Edit2, Trash2, CheckCircle2 } from 'lucide-react';
 import api from '../services/api';
 
 export default function Subjects() {
@@ -91,6 +91,15 @@ export default function Subjects() {
     }
   };
 
+  const handleToggleComplete = async (subject) => {
+    try {
+      await api.put(`/subjects/${subject._id}`, { ...subject, isCompleted: !subject.isCompleted });
+      fetchSubjects();
+    } catch (err) {
+      console.error('Failed to toggle completion:', err);
+    }
+  };
+
   const handleEdit = (subject) => {
     setFormData({
       name: subject.name || subject.subjectName || '',
@@ -167,7 +176,7 @@ export default function Subjects() {
             <span className="text-text-muted font-semibold group-hover:text-text-main transition-colors">Register New Subject</span>
           </div>
 
-          {subjects.map((subject) => {
+          {subjects.filter(s => !s.isCompleted).map((subject) => {
             const styles = getDifficultyStyles(subject.difficulty, subject.level);
             const progress = 100 - (subject.syllabusRemaining !== undefined ? Number(subject.syllabusRemaining) : 100);
             const displayName = subject.name || subject.subjectName || "Unnamed Node";
@@ -175,6 +184,13 @@ export default function Subjects() {
             return (
               <div key={subject._id} className="bg-surface border border-surface-border rounded-[32px] p-8 flex flex-col justify-between hover:border-[#383b4b] transition-all group relative overflow-hidden">
                 <div className="absolute top-6 right-6 flex gap-2 opacity-0 group-hover:opacity-100 transition-all translate-y-2 group-hover:translate-y-0">
+                   <button
+                     onClick={(e) => { e.stopPropagation(); handleToggleComplete(subject); }}
+                     className="p-2 bg-surface-sidebar border border-surface-border rounded-xl text-text-muted hover:text-primary hover:border-primary/30 transition-all active:scale-95"
+                     title={subject.isCompleted ? "Reactivate Node" : "Complete Node"}
+                   >
+                      <CheckCircle2 size={14} className={subject.isCompleted ? "text-primary" : ""} />
+                   </button>
                    <button
                      onClick={(e) => { e.stopPropagation(); handleEdit(subject); }}
                      className="p-2 bg-surface-sidebar border border-surface-border rounded-xl text-text-muted hover:text-primary hover:border-primary/30 transition-all active:scale-95"
@@ -234,6 +250,58 @@ export default function Subjects() {
               </div>
             );
           })}
+        </div>
+      )}
+
+      {/* Neural Completion Zone for finished subjects */}
+      {!loading && subjects.some(s => s.isCompleted) && (
+        <div className="mt-20 px-2">
+          <div className="flex items-center gap-4 mb-10">
+            <div className="w-12 h-12 rounded-2xl bg-surface border border-surface-border flex items-center justify-center shadow-sm">
+              <CheckCircle2 size={24} className="text-primary" />
+            </div>
+            <div>
+              <h2 className="text-3xl font-bold text-text-main tracking-tight">Neural Completion Zone</h2>
+              <p className="text-text-muted text-sm font-medium italic">Integrated knowledge clusters archived for long-term retention.</p>
+            </div>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {subjects.filter(s => s.isCompleted).map((subject) => {
+              const displayName = subject.name || subject.subjectName || "Unnamed Node";
+              return (
+                <div key={subject._id} className="bg-surface/30 backdrop-blur-md border border-surface-border rounded-[32px] p-8 flex flex-col justify-between opacity-80 hover:opacity-100 transition-all group relative border-dashed">
+                   <div className="absolute top-6 right-6 flex gap-2 opacity-0 group-hover:opacity-100 transition-all">
+                      <button
+                        onClick={() => handleToggleComplete(subject)}
+                        className="p-2 bg-surface-sidebar border border-surface-border rounded-xl text-primary hover:bg-primary/10 transition-all shadow-sm"
+                        title="Reactivate Node"
+                      >
+                         <TrendingUp size={14} />
+                      </button>
+                      <button
+                        onClick={() => handleDelete(subject._id, displayName)}
+                        className="p-2 bg-surface-sidebar border border-surface-border rounded-xl text-text-muted hover:text-[#ff4e4e] transition-all shadow-sm"
+                      >
+                         <Trash2 size={14} />
+                      </button>
+                   </div>
+                   <div>
+                      <div className="flex items-center gap-3 mb-4">
+                         <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
+                            <CheckCircle2 size={16} className="text-primary" />
+                         </div>
+                         <h3 className="text-xl font-bold text-text-main tracking-tight line-clamp-1">{displayName}</h3>
+                      </div>
+                      <p className="text-xs text-text-muted font-medium mb-4 leading-relaxed line-clamp-2">This subject node has reached 100% density and is officially archived in your neural repository.</p>
+                   </div>
+                   <div className="flex justify-between items-center text-[9px] font-bold text-text-muted uppercase tracking-[0.2em] pt-4 border-t border-surface-border/50">
+                      <span>Neural Sync Complete</span>
+                      <span className="text-primary">100% Stability</span>
+                   </div>
+                </div>
+              );
+            })}
+          </div>
         </div>
       )}
 
