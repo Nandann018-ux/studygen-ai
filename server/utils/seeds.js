@@ -5,6 +5,7 @@ const StudyPlan = require('../models/StudyPlan');
 
 /**
  * Seeds the user with a balanced academic profile.
+ * Standardized on 'name' field for reliability.
  */
 async function seedUserDashboard(userId) {
   try {
@@ -15,52 +16,51 @@ async function seedUserDashboard(userId) {
     await StudySession.deleteMany({ userId });
     await StudyPlan.deleteMany({ userId });
 
-    // 2. Provision core subjects (High-Fidelity academic profile)
+    // 2. Provision core subjects (High-Fidelity academic profile with high variance)
     const subjects = await Subject.insertMany([
       {
         userId,
-        subjectName: 'DSA',
+        name: 'Data Structures',
         difficulty: 5,
         proficiency: 2,
         syllabusRemaining: 75,
         examDate: new Date(Date.now() + 15 * 24 * 60 * 60 * 1000), 
         previousScore: 65,
-        hoursPerDay: 3
+        hoursPerDay: 4 // Varied from 3
       },
       {
         userId,
-        subjectName: 'FSD',
+        name: 'Web Architecture',
         difficulty: 4,
         proficiency: 3,
-        syllabusRemaining: 50,
+        syllabusRemaining: 40, // Varied from 50
         examDate: new Date(Date.now() + 25 * 24 * 60 * 60 * 1000), 
         previousScore: 78,
         hoursPerDay: 2.5
       },
       {
         userId,
-        subjectName: 'SESD',
+        name: 'Systems Design',
         difficulty: 3,
         proficiency: 4,
-        syllabusRemaining: 30,
+        syllabusRemaining: 20, // Varied from 30
         examDate: new Date(Date.now() + 40 * 24 * 60 * 60 * 1000), 
         previousScore: 82,
-        hoursPerDay: 2
+        hoursPerDay: 1.5 // Varied from 2
       },
       {
         userId,
-        subjectName: 'MATHS',
+        name: 'Engineering Maths',
         difficulty: 5,
         proficiency: 1,
-        syllabusRemaining: 90,
+        syllabusRemaining: 85, // Varied from 90
         examDate: new Date(Date.now() + 10 * 24 * 60 * 60 * 1000), 
         previousScore: 45,
-        hoursPerDay: 3.5
+        hoursPerDay: 5 // Varied from 3.5
       }
     ]);
 
     // 3. Populate historical sessions for data charts (Last 5 days) 
-    // Varying actual vs planned to create "Real" non-flat trends
     const sessions = [];
     const now = new Date();
     for(let i = 5; i >= 1; i--) {
@@ -68,15 +68,15 @@ async function seedUserDashboard(userId) {
         date.setDate(now.getDate() - i);
         
         subjects.forEach((sub, sIdx) => {
-            const baseHours = sub.hoursPerDay;
-            const variance = (sIdx % 2 === 0 ? 0.3 : -0.2) * i; // Distinct variance for each subject
+            const baseHours = sub.hoursPerDay || 2;
+            const variance = (sIdx % 2 === 0 ? 0.4 : -0.3) * (i / 2); 
             sessions.push({
                 userId,
                 subjectId: sub._id,
-                subjectName: sub.subjectName,
+                name: sub.name,
                 plannedHours: baseHours,
-                actualHours: Math.max(0, baseHours + variance),
-                completion: 80 + (sIdx * 5),
+                actualHours: Math.max(0.5, baseHours + variance),
+                completion: Math.min(100, 70 + (sIdx * 8) + (i * 2)),
                 date
             });
         });
