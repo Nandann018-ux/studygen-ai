@@ -1,10 +1,12 @@
 import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { Mail, Lock, Eye, Sparkles } from 'lucide-react';
 import api from '../services/api';
+import { useUser } from '../context/UserContext';
 
 export default function Auth() {
   const navigate = useNavigate();
+  const { updateUser } = useUser();
   const [isLogin, setIsLogin] = useState(true);
   const [formData, setFormData] = useState({ name: '', email: '', password: '' });
   const [error, setError] = useState('');
@@ -23,11 +25,19 @@ export default function Auth() {
         });
         localStorage.setItem('studygen_token', response.data.token);
         localStorage.setItem('studygen_user', JSON.stringify(response.data.user));
+        updateUser(response.data.user);
         navigate('/dashboard');
       } else {
+        // Register then auto-login so name appears correctly
         await api.post('/auth/register', formData);
-        setIsLogin(true);
-        setError('Account created! Please log in.');
+        const loginRes = await api.post('/auth/login', {
+          email: formData.email,
+          password: formData.password
+        });
+        localStorage.setItem('studygen_token', loginRes.data.token);
+        localStorage.setItem('studygen_user', JSON.stringify(loginRes.data.user));
+        updateUser(loginRes.data.user);
+        navigate('/dashboard');
       }
     } catch (err) {
       setError(err.response?.data?.message || 'Authentication failed');
