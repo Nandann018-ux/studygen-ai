@@ -9,14 +9,14 @@
     --color-primary-light: 36 235 154;
     
     --color-surface-default: 255 255 255;
-    --color-surface-bg: 244 245 248;
-    --color-surface-sidebar: 249 250 251;
-    --color-surface-hover: 232 233 239;
-    --color-surface-border: 226 228 233;
+    --color-surface-bg: 248 250 252;
+    --color-surface-sidebar: 255 255 255;
+    --color-surface-hover: 241 245 249;
+    --color-surface-border: 226 232 240;
     
-    --color-text-main: 26 29 45;
-    --color-text-muted: 91 97 124;
-    --color-text-dark: 26 29 45;
+    --color-text-main: 15 23 42;
+    --color-text-muted: 100 116 139;
+    --color-text-dark: 15 23 42;
   }
 
   .dark {

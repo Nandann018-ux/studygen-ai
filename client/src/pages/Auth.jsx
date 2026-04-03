@@ -43,31 +43,31 @@ export default function Auth() {
           <div className="bg-primary text-white p-1.5 rounded-lg flex items-center justify-center">
             <Sparkles size={20} />
           </div>
-          <span className="font-semibold text-primary text-xl tracking-tight">AI Smart Study Planner</span>
+          <span className="font-semibold text-primary text-xl tracking-tight">StudyGen AI</span>
         </div>
         
         <div className="max-w-xl relative z-10 flex-1 flex flex-col justify-center mt-[-10vh]">
           <h1 className="text-6xl font-bold text-text-main mb-6 leading-tight tracking-tight">
-            Study smarter, <br />
-            <span className="text-primary">{isLogin ? 'not harder.' : 'with intent.'}</span>
+            Master your mind, <br />
+            <span className="text-primary">{isLogin ? 'accelerate mastery.' : 'evolve faster.'}</span>
           </h1>
           <p className="text-xl text-text-muted leading-relaxed max-w-lg font-medium">
-            An intelligent scheduling system using spaced repetition and cognitive load targeting.
+            An advanced neural engine designed for high-performance cognitive development and intelligent study orchestration.
           </p>
         </div>
 
         <div className="relative z-10 bg-surface-bg/80 backdrop-blur-xl p-6 rounded-3xl max-w-sm shadow-sm border border-surface-border">
           <div className="flex items-center gap-3 mb-4">
-            <div className="w-12 h-12 rounded-full bg-teal-400 overflow-hidden border border-white flex justify-center items-end">
-              <svg className="w-10 h-10 text-slate-800" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clipRule="evenodd"></path></svg>
+            <div className="w-12 h-12 rounded-full bg-primary/20 overflow-hidden border border-white flex justify-center items-end">
+              <svg className="w-10 h-10 text-primary" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clipRule="evenodd"></path></svg>
             </div>
             <div>
-              <h4 className="font-semibold text-text-main text-sm">Alex Chen</h4>
-              <p className="text-xs text-text-muted">Cognitive Science Student</p>
+              <h4 className="font-semibold text-text-main text-sm">Stephen Hawking</h4>
+              <p className="text-xs text-text-muted">Theoretical Physicist</p>
             </div>
           </div>
           <p className="text-sm text-text-muted italic leading-relaxed">
-            "The spatial flexibility of this platform changed how I organize my research. It feels like a premium workspace, not just a tool."
+            "Intelligence is the ability to adapt to change. StudyGen AI provides the perfect cognitive framework to navigate that internal evolution with precision."
           </p>
         </div>
 
