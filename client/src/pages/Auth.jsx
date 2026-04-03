@@ -28,7 +28,6 @@ export default function Auth() {
         updateUser(response.data.user);
         navigate('/dashboard');
       } else {
-        // Register then auto-login so name appears correctly
         await api.post('/auth/register', formData);
         const loginRes = await api.post('/auth/login', {
           email: formData.email,
