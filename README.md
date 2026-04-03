@@ -1,94 +1,78 @@
 # StudyGen AI
 
-### Neural-Inspired Intelligent Study Orchestration
+### Intelligent Study Orchestration and Cognitive Analytics
 
-![StudyGen AI Hero](/Users/nandanachar/.gemini/antigravity/brain/83c5d8fe-6635-4119-a4d6-818d45fa7b2e/studygen_ai_hero_1775202193781.png)
-
-StudyGen AI is a premium, full-stack cognitive development platform designed to optimize learning through intelligent orchestration and a high-performance "Neural Laboratory" aesthetic. 
+StudyGen AI is a full-stack platform designed to optimize academic performance through heuristic-based study planning and real-time cognitive analytics. The system provides a centralized environment for students to manage intensive study schedules, track mastery across multiple subjects, and utilize data-driven insights to refine their learning process.
 
 ---
 
-## 🚀 Vision
+## Technical Overview
 
-StudyGen AI moves beyond traditional scheduling. It is a **Neural Sanctuary** where high-performance students can manage their cognitive load, track daily mastery, and leverage heuristic-based AI to generate adaptive study plans that evolve with their progress.
-
----
-
-## ✨ Key Features
-
-### 🧠 Neural Dashboard
-A state-of-the-art interface providing real-time data visualization of study progress. Built on a clean, slate-based Design System with glassmorphism accents and high-contrast Light Mode default for maximum clarity.
-
-### 📅 AI Smart Study Planner
-An intelligent orchestration engine that uses advanced heuristics to prioritize subjects based on difficulty, time constraints, and cognitive thresholds. Dynamic "Mark as Completed" tracking ensures your plan is always live.
-
-### ⏲️ Focus Mode (Pomodoro)
-Integrated deep-work timer designed to keep you in the "flow state". Perfectly synced with your current study session for accurate performance analytics.
-
-### 📊 Cognitive Analytics
-Rich, data-driven charts and metrics that reflect your actual learning growth. No placeholders—every pixel is powered by real session data.
-
-### ⚙️ Adaptive Settings
-Fine-tune your cognitive sanctuary. Adjust daily study ceilings, set cognitive confidence thresholds, and personalize your neural identity with custom avatars.
+The application is built on a modern distributed architecture, integrating a high-performance React frontend with a scalable Node.js backend. It employs a custom heuristic engine to calculate optimal study distributions based on subject difficulty and user-defined cognitive thresholds.
 
 ---
 
-## 🛠️ Technology Stack
+## Core Features
 
-| Layer | Technologies |
-| :--- | :--- |
-| **Frontend** | React 19, Vite, Tailwind CSS, Lucide Icons, Recharts |
-| **Backend** | Node.js, Express.js |
-| **Database** | MongoDB (Mongoose ODM) |
-| **Auth** | JWT (JSON Web Tokens), Bcrypt.js |
-| **AI/Logic** | Native Heuristic Engine, Python-interoperable core |
+### Neural Dashboard and Analytics
+The dashboard serves as the central command center, providing real-time visualization of study progress. Using high-contrast data representations, it allows users to monitor their time allocation and subject mastery levels without distraction.
 
----
+### Adaptive Study Planning
+The integrated planning module generates dynamic daily schedules. It prioritizes subjects based on workload intensity and historical progress, ensuring that users focus on areas requiring the most cognitive attention.
 
-## 📂 Project Structure
+### Integrated Focus Management
+The platform includes a dedicated Focus Mode, implementing standard deep-work protocols to minimize context switching and maximize session efficiency.
 
-```text
-├── client/          # React Frontend (Vite)
-├── server/          # Node.js Backend (Express)
-├── ml-service/      # Heuristic Logic & Processing
-├── docs/            # Branding & Architecture Docs
-└── README.md        # Project Intelligence
-```
+### Cognitive Configuration
+Users can define their specific learning constraints, including daily study limits and confidence thresholds, allowing the system to tailor its recommendations to individual performance baselines.
 
 ---
 
-## 🏁 Getting Started
+## Technology Stack
 
-### 1. Prerequisites
-- Node.js (v18+)
-- MongoDB Instance
+### Frontend
+- React 19 (Vite)
+- Tailwind CSS (Design System)
+- Lucide React (Iconography)
+- Recharts (Data Visualization)
 
-### 2. Backend Setup
-```bash
-cd server
-npm install
-# Configure your .env (JWT_SECRET, MONGODB_URI)
-npm run dev
-```
-
-### 3. Frontend Setup
-```bash
-cd client
-npm install
-npm run dev
-```
+### Backend
+- Node.js and Express.js
+- MongoDB (Data Persistence)
+- JWT (Authentication and Security)
+- Bcrypt.js (Credential Encryption)
 
 ---
 
-## 🎨 Design Philosophy: The Neural Laboratory
+## Directory Structure
 
-StudyGen AI follows a **Premium Light Mode** strategy:
-- **Primary Color**: `#6366f1` (Vibrant Indigo)
-- **Background**: Slate-based subtle gradients for a clinical, focused feel.
-- **Typography**: Inter / Outfit for high readability.
-- **Interactions**: Micro-animations and "Neural Progress Sync" shimmmers for an alive interface.
+- `client/`: React-based user interface and state management.
+- `server/`: Express API services and database controllers.
+- `ml-service/`: Heuristic logic and processing modules.
+- `docs/`: Technical documentation and design guidelines.
 
 ---
 
-## 📜 License
-MIT License - Created for the future of cognitive excellence.
+## Installation and Deployment
+
+### Backend Setup
+1. Navigate to the server directory: `cd server`
+2. Install dependencies: `npm install`
+3. Configure environment variables in a `.env` file (JWT_SECRET, MONGODB_URI).
+4. Start the development server: `npm run dev`
+
+### Frontend Setup
+1. Navigate to the client directory: `cd client`
+2. Install dependencies: `npm install`
+3. Start the Vite development environment: `npm run dev`
+
+---
+
+## Design Language
+
+StudyGen AI utilizes a "Neural Laboratory" design language, characterized by a high-contrast Light Mode default, slate-based color palettes, and minimalist glassmorphism. The interface is engineered to reduce cognitive load while maintaining a premium, professional aesthetic.
+
+---
+
+## License
+Distributed under the MIT License.
