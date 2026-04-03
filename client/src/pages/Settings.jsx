@@ -150,9 +150,9 @@ export default function Settings() {
                     <label className="block text-sm font-bold text-text-main mb-2">Email Endpoint</label>
                     <input 
                       type="email" 
-                      value={user.email}
-                      disabled
-                      className="w-full bg-surface-sidebar border border-surface-border rounded-xl py-3 px-4 text-text-muted cursor-not-allowed"
+                      value={user.email || 'user@studygen.ai'}
+                      readOnly
+                      className="w-full bg-surface-sidebar/50 border border-surface-border rounded-xl py-3 px-4 text-text-muted/80 cursor-not-allowed focus:outline-none transition-all selection:bg-primary/20"
                     />
                   </div>
                 </div>
