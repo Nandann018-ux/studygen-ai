@@ -8,14 +8,16 @@ import Focus from './pages/Focus';
 import Analytics from './pages/Analytics';
 import Settings from './pages/Settings';
 import { ThemeProvider } from './context/ThemeContext';
+import { UserProvider } from './context/UserContext';
 function App() {
   return (
-    <ThemeProvider>
-      <BrowserRouter>
+    <UserProvider>
+      <ThemeProvider>
+        <BrowserRouter>
         <Routes>
           <Route path="/auth" element={<Auth />} />
           <Route path="/" element={<Layout />}>
-            <Route index element={<Navigate to="/dashboard" replace />} />
+            <Route index element={<Navigate to="/auth" replace />} />
             <Route path="dashboard" element={<Dashboard />} />
             <Route path="subjects" element={<Subjects />} />
             <Route path="plan" element={<StudyPlan />} />
@@ -25,7 +27,8 @@ function App() {
           </Route>
         </Routes>
       </BrowserRouter>
-    </ThemeProvider>
+      </ThemeProvider>
+    </UserProvider>
   );
 }
 export default App;
