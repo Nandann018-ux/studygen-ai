@@ -11,6 +11,8 @@ async function generateStudyPlan(subjects, daysToPlan = 7) {
   const startOfDay = new Date();
   startOfDay.setHours(0, 0, 0, 0);
 
+  if (!subjects || subjects.length === 0) return [];
+
   console.log(`[Generator] Processing ${subjects.length} subjects for user ${subjects[0]?.userId}`);
 
   for (let dayOffset = 0; dayOffset < daysToPlan; dayOffset++) {
@@ -28,12 +30,9 @@ async function generateStudyPlan(subjects, daysToPlan = 7) {
 
     console.log(`[Generator] Day ${dayOffset}: ${validSubjects.length} valid subjects identified.`);
 
-    // Now uses validSubjects directly for all days
-    const subjectsToProcess = validSubjects;
-
     const dayPredictions = await Promise.all(
-      subjectsToProcess.map(async (sub) => {
-        console.log(`[Generator] Starting subject: ${sub.subjectName}`);
+      validSubjects.map(async (sub) => {
+        console.log(`[Generator] Starting subject: ${sub.name || sub.subjectName}`);
         const examDate = new Date(sub.examDate);
         const daysLeftFromCurrent = Math.ceil(
           (examDate.getTime() - currentDate.getTime()) / (1000 * 60 * 60 * 24)
@@ -42,16 +41,18 @@ async function generateStudyPlan(subjects, daysToPlan = 7) {
 
         let result;
         try {
+          const currentDiff = (sub.difficulty !== undefined && sub.difficulty !== null) ? sub.difficulty : 3;
           result = await predictStudyHours({
             userId: sub.userId,
             subjectId: sub._id,
-            difficulty: sub.difficulty,
+            difficulty: currentDiff,
             syllabusRemaining: sub.syllabusRemaining,
             daysLeft: effectiveDaysLeft
           });
         } catch (mlErr) {
-          console.error(`[Generator] Prediction failed for ${sub.subjectName}, using rule-based fallback.`);
-          const fallbackHours = (sub.difficulty * 2 + (sub.syllabusRemaining || 40) / 10) * (30 / effectiveDaysLeft);
+          console.error(`[Generator] Prediction failed for ${sub.name || sub.subjectName}, using rule-based fallback.`);
+          const currentDiff = (sub.difficulty !== undefined && sub.difficulty !== null) ? sub.difficulty : 3;
+          const fallbackHours = (currentDiff * 2 + (sub.syllabusRemaining || 40) / 10) * (30 / effectiveDaysLeft);
           result = { 
             predictedHours: Math.min(6, Math.max(1, fallbackHours / 7)), 
             reasons: ["Dynamic rule-based allocation (Heuristic Fallback)"] 
@@ -59,15 +60,15 @@ async function generateStudyPlan(subjects, daysToPlan = 7) {
         }
 
         // Apply "Always-on" Neural Weighting to prevent identical 2.0h/2.5h patterns
-        const priorityWeight = (sub.difficulty || 3) / 3; // 1.66x for difficulty 5, 0.33x for difficulty 1
+        const currentDiff = (sub.difficulty !== undefined && sub.difficulty !== null) ? sub.difficulty : 3;
+        const priorityWeight = currentDiff / 3; 
         const weightedHours = result.predictedHours * priorityWeight;
 
-        // Capped individual session duration (Max 4 hours for realism)
         const allocatedHours = Math.min(4, Math.max(0.7, weightedHours));
         
         return {
           subjectId: sub._id,
-          subjectName: sub.subjectName,
+          subjectName: sub.name || sub.subjectName, // Keep subjectName for plan model compatibility if needed, but prioritize 'name'
           allocatedHours,
           reasons: result.reasons,
           date: currentDate.toISOString().split('T')[0],
@@ -82,18 +83,17 @@ async function generateStudyPlan(subjects, daysToPlan = 7) {
     if (totalHoursForDay > DAILY_CEILING) {
       console.log(`[Generator] Day ${dayOffset}: Total hours ${totalHoursForDay.toFixed(1)} exceeds ceiling. Scaling with weighting.`);
       
-      // Calculate weights based on difficulty vs proficiency
       const weights = dayPredictions.map(p => {
         const sub = subjects.find(s => s._id === p.subjectId);
-        // Weight = Difficulty (1-5) + (1 / Proficiency)
-        return (sub?.difficulty || 3) + (6 - (sub?.proficiency || 3));
+        const d = (sub?.difficulty !== undefined && sub?.difficulty !== null) ? sub.difficulty : 3;
+        const prof = (sub?.proficiency !== undefined && sub?.proficiency !== null) ? sub.proficiency : 3;
+        return d + (6 - prof);
       });
       
       const totalWeight = weights.reduce((a, b) => a + b, 0);
       const scaleFactor = DAILY_CEILING / totalHoursForDay;
       
       dayPredictions.forEach((session, idx) => {
-        // Subjects with higher weight get a larger share of the ceiling
         const subjectWeightFactor = weights[idx] / (totalWeight / dayPredictions.length);
         session.allocatedHours = Math.max(0.5, parseFloat((session.allocatedHours * scaleFactor * subjectWeightFactor).toFixed(1)));
         
@@ -113,7 +113,6 @@ async function generateStudyPlan(subjects, daysToPlan = 7) {
     return b.allocatedHours - a.allocatedHours;
   });
 
-  console.log(`[Generator] Final Plan Size: ${plan.length} sessions.`);
   return plan;
 }
 
