@@ -6,6 +6,7 @@ const userSchema = new mongoose.Schema(
     email: { type: String, required: true, unique: true },
     password: { type: String, required: true },
     dailyStudyHours: { type: Number, default: 4 },
+    avatar: { type: String, default: 'https://api.dicebear.com/7.x/pixel-art/svg?seed=Julian' },
   },
   { timestamps: true }
 );
