@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Play, FileText, BarChart2, Sparkles, Wand2, CheckCircle2, X, Info } from 'lucide-react';
+import { Play, FileText, BarChart2, Sparkles, Wand2, CheckCircle2, X, Info, TrendingUp } from 'lucide-react';
 import api from '../services/api';
 
 export default function StudyPlan() {
   const navigate = useNavigate();
   const [plan, setPlan] = useState([]);
+  const [subjects, setSubjects] = useState([]);
   const [loading, setLoading] = useState(true);
   const [generating, setGenerating] = useState(false);
   const [selectedTask, setSelectedTask] = useState(null);
@@ -21,7 +22,8 @@ export default function StudyPlan() {
       const planWithTips = await Promise.all(response.data.map(async (task, i) => {
         if (i < 3) { // Only fetch tips for the next 3 tasks to save resources
           try {
-            const tipsRes = await api.post('/ml/tips', { subjectName: task.subjectName, difficulty: task.difficulty || 3 });
+            const currentDiff = (task.difficulty !== undefined && task.difficulty !== null) ? task.difficulty : 3;
+            const tipsRes = await api.post('/ml/tips', { name: task.name || task.subjectName, difficulty: currentDiff });
             return { ...task, aiTips: tipsRes.data.tips };
           } catch (e) {
             return task;
@@ -32,32 +34,43 @@ export default function StudyPlan() {
       setPlan(planWithTips);
     } catch (err) {
       console.error('Failed to fetch plan:', err);
-    } finally {
-      setLoading(false);
+    }
+  };
+
+  const fetchSubjects = async () => {
+    try {
+      const response = await api.get('/subjects');
+      setSubjects(response.data);
+    } catch (err) {
+      console.error('Failed to fetch subjects:', err);
     }
   };
 
   useEffect(() => {
-    fetchPlan();
+    const init = async () => {
+        setLoading(true);
+        await Promise.all([fetchPlan(), fetchSubjects()]);
+        setLoading(false);
+    };
+    init();
   }, []);
 
   const showFeedback = (msg) => {
     setToast(msg);
     setTimeout(() => setToast(null), 3000);
   };
-// ... rest of logic stays similar ...
-// Moving down to JSX updates
-// Around line 170 in original file (task card)
 
   const handleRegenerate = async () => {
+    if (subjects.length === 0) {
+      showFeedback("Neural Node Required: Add subjects to generate a plan 🧠");
+      return;
+    }
+    
     setGenerating(true);
     console.log("Starting plan regeneration...");
     try {
       const response = await api.post('/plans/generate');
       console.log("Plan generated successfully:", response.data);
-      
-      // If default subjects were seeded, we should ideally refresh the subjects context 
-      // but fetchPlan() will at least show the new sessions immediately.
       await fetchPlan(); 
       showFeedback("Neural pathways recalibrated 🧠");
     } catch (err) {
@@ -76,7 +89,7 @@ export default function StudyPlan() {
   const handleMarkCompleted = (task) => {
     setSelectedTask(task);
     setSessionData({ 
-      actualHours: task.allocatedHours.toFixed(1), 
+      actualHours: Number(task.allocatedHours).toFixed(1), 
       completion: 100 
     });
     setShowModal(true);
@@ -88,22 +101,20 @@ export default function StudyPlan() {
     try {
       await api.post('/session', {
         subjectId: selectedTask.subjectId,
-        subjectName: selectedTask.subjectName,
+        name: selectedTask.name || selectedTask.subjectName,
         plannedHours: selectedTask.allocatedHours,
         actualHours: parseFloat(sessionData.actualHours),
         completion: parseInt(sessionData.completion),
         date: new Date(),
-        planId: selectedTask._id // Crucial for persistence
+        planId: selectedTask._id
       });
 
-      // Update local state for immediate visual feedback
       setPlan(prev => prev.map(t => 
         t._id === selectedTask._id ? { ...t, isCompleted: true } : t
       ));
 
       setShowModal(false);
       showFeedback("AI updated your study pattern 📈");
-      // Optional: fetch insights if needed, or just let dashboard handle it
     } catch (err) {
       console.error('Failed to save session:', err);
     } finally {
@@ -120,7 +131,6 @@ export default function StudyPlan() {
   };
 
   const todayDate = new Date().toISOString().split('T')[0];
-  // Standardize comparison by splitting full ISO strings from the backend
   const todayPlan = plan.filter(task => task.date && task.date.split('T')[0] === todayDate);
   let currentStartHour = 8;
 
@@ -148,8 +158,13 @@ export default function StudyPlan() {
 
           <div className="space-y-8 flex flex-col relative z-10">
             {loading ? (
-              <div className="text-center py-20 text-text-muted font-bold tracking-widest uppercase">
-                Synchronizing Neural Roadmap...
+              <div className="text-center py-20 text-text-muted font-bold tracking-widest uppercase flex items-center justify-center gap-2 bg-surface border border-surface-border rounded-[32px]">
+                Synchronizing Neural Roadmap
+                <div className="flex gap-1 ml-2">
+                  <span className="neural-dot"></span>
+                  <span className="neural-dot"></span>
+                  <span className="neural-dot"></span>
+                </div>
               </div>
             ) : todayPlan.length === 0 ? (
               <div className="text-center py-20 text-text-muted font-bold tracking-widest uppercase bg-surface border border-surface-border rounded-[32px]">
@@ -175,7 +190,7 @@ export default function StudyPlan() {
                             {startTimeStr} — {endTimeStr}
                           </span>
                           <h3 className={`text-2xl font-bold text-text-main tracking-tight ${task.isCompleted ? 'line-through decoration-primary/50' : ''}`}>
-                            {task.subjectName}
+                            {task.name || task.subjectName}
                           </h3>
                         </div>
                         <div className="flex gap-2">
@@ -203,7 +218,7 @@ export default function StudyPlan() {
                       )}
 
                       <p className="text-text-muted leading-relaxed max-w-2xl mb-8 font-medium">
-                        Allocated {task.allocatedHours.toFixed(1)} hours of focus time based on retention algorithms and your cognitive profile.
+                        Allocated {Number(task.allocatedHours).toFixed(1)} hours of focus time based on retention algorithms and your cognitive profile.
                       </p>
 
                       {task.aiTips && task.aiTips.length > 0 && !task.isCompleted && (
@@ -295,68 +310,52 @@ export default function StudyPlan() {
                 <span className="text-2xl font-bold text-text-main leading-none">Optimal</span>
               </div>
             </div>
-
-            <div className="relative rounded-2xl overflow-hidden border border-surface-border group p-1 bg-surface-sidebar">
-               <div className="h-32 w-full flex items-end justify-center gap-1.5 px-2 pb-2">
-                  {Array.from({length: 12}).map((_, i) => (
-                    <div key={i} className="w-full bg-primary/20 rounded-t-lg transition-all duration-700 hover:bg-primary/40" style={{ height: `${Math.random() * 60 + 20}%`, transitionDelay: `${i * 50}ms` }}></div>
-                   ))}
-               </div>
-               <div className="absolute top-4 left-4 z-20">
-                  <span className="text-[10px] font-bold tracking-[0.2em] uppercase text-primary mb-1 block">Live Flow</span>
-                  <span className="text-xs font-bold text-white">Focus peaking now</span>
-               </div>
-            </div>
           </div>
         </div>
       </div>
 
       {showModal && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-black/60 backdrop-blur-sm animate-in fade-in duration-300">
-          <div className="bg-surface border border-surface-border w-full max-w-md rounded-[32px] p-8 shadow-2xl animate-in zoom-in-95 duration-300">
-            <div className="flex justify-between items-center mb-6">
-              <h3 className="text-2xl font-bold text-text-main tracking-tight">Session Success</h3>
-              <button onClick={() => setShowModal(false)} className="text-text-muted hover:text-text-main transition-colors">
-                <X size={24} />
-              </button>
-            </div>
+        <div className="fixed inset-0 bg-[#0a0b10]/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-in fade-in zoom-in-95 duration-200">
+          <div className="bg-surface border border-surface-border rounded-[32px] p-10 w-full max-w-md shadow-2xl relative">
+            <button 
+              onClick={() => setShowModal(false)}
+              className="absolute top-8 right-8 text-text-muted hover:text-text-main hover:bg-surface-hover p-2 rounded-full transition-all"
+            >
+              <X size={24} />
+            </button>
+            <h2 className="text-3xl font-bold text-text-main mb-2">Log Session</h2>
+            <p className="text-text-muted text-sm mb-8">Update your neural pattern with actual study data.</p>
             
             <form onSubmit={handleSubmitSession} className="space-y-6">
               <div>
-                <label className="block text-sm font-bold text-text-main mb-3">Actual Focus Duration (hrs)</label>
+                <label className="block text-xs font-bold text-text-muted mb-2 uppercase tracking-wide">Actual Time Focus (Hours)</label>
                 <input 
                   type="number" 
                   step="0.1"
-                  required
-                  autoFocus
+                  className="w-full bg-surface-hover border border-surface-border rounded-xl px-5 py-4 text-text-main text-sm focus:outline-none focus:border-primary/50 transition-all font-bold"
                   value={sessionData.actualHours}
                   onChange={(e) => setSessionData({...sessionData, actualHours: e.target.value})}
-                  className="w-full bg-surface-sidebar border border-surface-border rounded-xl py-4 px-4 text-white focus:outline-none focus:border-primary/50 transition-all font-bold"
+                  required
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-bold text-text-main mb-4 flex justify-between">
-                  Syllabus Mastered
-                  <span className="text-primary font-bold">{sessionData.completion}%</span>
-                </label>
+                <label className="block text-xs font-bold text-text-muted mb-2 uppercase tracking-wide">Completion Rate ({sessionData.completion}%)</label>
                 <input 
                   type="range" 
                   min="0" 
-                  max="100" 
+                  max="100"
+                  className="w-full accent-primary bg-surface-hover rounded-full"
                   value={sessionData.completion}
                   onChange={(e) => setSessionData({...sessionData, completion: e.target.value})}
-                  className="w-full accent-primary bg-surface-sidebar h-2 rounded-lg appearance-none cursor-pointer"
                 />
               </div>
 
-              <button 
-                type="submit"
-                disabled={submitting}
-                className="w-full bg-primary hover:bg-primary-light text-[#0a0b10] py-4 rounded-xl font-bold tracking-wide transition-all active:scale-95 disabled:opacity-50 shadow-lg shadow-primary/20 hover:scale-[1.02]"
-              >
-                {submitting ? 'Synthesizing Results...' : 'Log Session Success'}
-              </button>
+              <div className="pt-4">
+                <button type="submit" disabled={submitting} className="w-full bg-primary text-[#0a0b10] py-4 rounded-xl font-bold shadow-lg shadow-primary/20 hover:bg-primary-light transition-all active:scale-95 text-lg disabled:opacity-50">
+                  {submitting ? 'Capturing Brain State...' : 'Sync Session Data'}
+                </button>
+              </div>
             </form>
           </div>
         </div>
@@ -364,4 +363,3 @@ export default function StudyPlan() {
     </div>
   );
 }
-
