@@ -41,29 +41,17 @@ The application uses a structured dataset (`study_data.csv`) for initial model c
 ### 1. Environment Configuration
 Install dependencies for each component of the architecture:
 ```bash
-# General workspace installation
 npm install
-
-# Server-side installation
 cd server && npm install
-
-# Client-side installation
 cd ../client && npm install
-
-# Machine Learning service installation
 cd ../ml-service && pip install -r requirements.txt
 ```
 
 ### 2. Runtime Instructions
 Execute the following commands to start the application components:
 ```bash
-# Start Backend API (Port 5001)
 npm run dev:server
-
-# Start Frontend Application (Port 5173)
 npm run dev:client
-
-# Initialize Machine Learning Models
 cd ml-service && python train.py && python predict.py
 ```
 
