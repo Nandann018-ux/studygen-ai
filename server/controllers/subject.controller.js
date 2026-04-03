@@ -1,8 +1,10 @@
 const Subject = require('../models/Subject');
+const StudyPlan = require('../models/StudyPlan');
+const StudySession = require('../models/StudySession');
 async function addSubject(req, res) {
   try {
     const { 
-      subjectName, 
+      name, 
       difficulty, 
       proficiency, 
       syllabusRemaining, 
@@ -12,20 +14,20 @@ async function addSubject(req, res) {
       revisionRequired 
     } = req.body;
 
-    if (!subjectName) {
-      return res.status(400).json({ message: 'subjectName is required' });
+    if (!name) {
+      return res.status(400).json({ message: 'name is required' });
     }
 
     const newSubject = await Subject.create({
       userId: req.user.userId,
-      subjectName,
-      difficulty,
-      proficiency,
-      syllabusRemaining,
+      name,
+      difficulty: Number(difficulty),
+      proficiency: Number(proficiency),
+      syllabusRemaining: Number(syllabusRemaining),
       examDate,
-      previousScore,
-      hoursPerDay,
-      revisionRequired
+      previousScore: Number(previousScore),
+      hoursPerDay: Number(hoursPerDay),
+      revisionRequired: Boolean(revisionRequired)
     });
     return res.status(201).json(newSubject);
   } catch (err) {
@@ -42,4 +44,66 @@ async function getSubjects(req, res) {
     return res.status(500).json({ message: 'Internal Server Error' });
   }
 }
-module.exports = { addSubject, getSubjects };
+async function updateSubject(req, res) {
+  try {
+    const { id } = req.params;
+    const { 
+      name, 
+      difficulty, 
+      proficiency, 
+      syllabusRemaining, 
+      examDate,
+      previousScore,
+      hoursPerDay,
+      revisionRequired 
+    } = req.body;
+
+    const updatedSubject = await Subject.findOneAndUpdate(
+      { _id: id, userId: req.user.userId },
+      { 
+        name, 
+        difficulty: Number(difficulty),
+        proficiency: Number(proficiency),
+        syllabusRemaining: Number(syllabusRemaining),
+        examDate,
+        previousScore: Number(previousScore),
+        hoursPerDay: Number(hoursPerDay),
+        revisionRequired: Boolean(revisionRequired)
+      },
+      { new: true }
+    );
+
+    if (!updatedSubject) {
+      return res.status(404).json({ message: 'Subject not found or unauthorized' });
+    }
+
+    return res.status(200).json(updatedSubject);
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({ message: 'Internal Server Error' });
+  }
+}
+
+async function deleteSubject(req, res) {
+  try {
+    const { id } = req.params;
+    
+    // Cascading delete: Remove the subject and all its related plans/sessions
+    const deletedSubject = await Subject.findOneAndDelete({ _id: id, userId: req.user.userId });
+
+    if (!deletedSubject) {
+      return res.status(404).json({ message: 'Subject not found or unauthorized' });
+    }
+
+    // Purge orphaned study data tied to this subject node
+    await StudyPlan.deleteMany({ subjectId: id, userId: req.user.userId });
+    await StudySession.deleteMany({ subjectId: id, userId: req.user.userId });
+
+    return res.status(200).json({ message: 'Subject and associated study data deleted successfully' });
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({ message: 'Internal Server Error' });
+  }
+}
+
+module.exports = { addSubject, getSubjects, updateSubject, deleteSubject };
