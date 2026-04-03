@@ -188,15 +188,15 @@ export default function Settings() {
                 <div>
                   <label className="block text-sm font-bold text-text-main mb-4 flex justify-between">
                     Daily Active Focus Capacity
-                    <span className="text-primary">{user.dailyStudyHours} hrs</span>
+                    <span className="text-primary font-black uppercase tracking-widest">{user.dailyStudyHours || 6} hrs</span>
                   </label>
                   <input 
                     type="range" 
                     min="1" 
                     max="16" 
-                    value={user.dailyStudyHours}
-                    onChange={(e) => setUser({...user, dailyStudyHours: parseInt(e.target.value)})}
-                    className="w-full accent-primary bg-surface-sidebar h-2 rounded-lg appearance-none cursor-pointer"
+                    value={user.dailyStudyHours || 6}
+                    onChange={(e) => updateUser({ dailyStudyHours: parseInt(e.target.value) })}
+                    className="neural-slider"
                   />
                   <p className="mt-4 text-xs text-text-muted font-medium">
                     Adjusting this limits the total study hours the AI will allocate per day.

@@ -72,3 +72,44 @@ canvas {
 .animate-shimmer {
   animation: shimmer 1.5s infinite;
 }
+
+.neural-slider {
+  -webkit-appearance: none;
+  width: 100%;
+  height: 8px;
+  background: rgba(var(--color-primary-default) / 0.1);
+  border-radius: 99px;
+  outline: none;
+  transition: all 0.2s;
+  border: 1px solid rgba(var(--color-primary-default) / 0.1);
+  cursor: pointer;
+}
+
+.neural-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 20px;
+  height: 20px;
+  background: rgb(var(--color-primary-default));
+  border-radius: 50%;
+  cursor: pointer;
+  box-shadow: 0 0 15px rgba(var(--color-primary-default) / 0.4);
+  transition: all 0.2s;
+  border: 4px solid white;
+}
+
+.neural-slider::-webkit-slider-thumb:hover {
+  transform: scale(1.15);
+  box-shadow: 0 0 20px rgba(var(--color-primary-default) / 0.6);
+}
+
+.neural-slider::-moz-range-thumb {
+  width: 20px;
+  height: 20px;
+  background: rgb(var(--color-primary-default));
+  border-radius: 50%;
+  cursor: pointer;
+  box-shadow: 0 0 15px rgba(var(--color-primary-default) / 0.4);
+  transition: all 0.2s;
+  border: 4px solid white;
+}
