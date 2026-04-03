@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Activity, TrendingDown, Medal, Sparkles, Rocket } from 'lucide-react';
+import { Activity, TrendingDown, Medal, Sparkles, Rocket, TrendingUp } from 'lucide-react';
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -29,6 +29,8 @@ export default function Analytics() {
   const [loading, setLoading] = useState(true);
   const [insights, setInsights] = useState(null);
   const [predictedScore, setPredictedScore] = useState(null);
+  const [tips, setTips] = useState([]);
+  const [tipsLoading, setTipsLoading] = useState(false);
 
   useEffect(() => {
     const fetchAnalyticsData = async () => {
@@ -49,6 +51,20 @@ export default function Analytics() {
           const weakestSubject = [...subs].sort((a, b) => b.syllabusRemaining - a.syllabusRemaining)[0];
           const scoreRes = await api.post('/ml/predict-score', weakestSubject);
           setPredictedScore(scoreRes.data.predictedScore);
+          
+          // Neural Integration: Fetch Study Tips for the weakest node
+          setTipsLoading(true);
+          try {
+            const tipsRes = await api.post('/ml/tips', {
+              name: weakestSubject.name || weakestSubject.subjectName,
+              difficulty: weakestSubject.difficulty || 3
+            });
+            setTips(tipsRes.data.tips || []);
+          } catch (tErr) {
+            console.error("Neural Tips Error:", tErr.message);
+          } finally {
+            setTipsLoading(false);
+          }
         }
       } catch (err) {
         console.error('Error fetching analytics data:', err);
@@ -63,13 +79,14 @@ export default function Analytics() {
 
   // Weakest subject (highest syllabus remaining or lowest proficiency)
   const sortedByNeeds = [...subjects].sort((a, b) => b.syllabusRemaining - a.syllabusRemaining);
-  const weakestSubjectName = sortedByNeeds.length > 0 ? sortedByNeeds[0].subjectName : 'None';
+  const weakestSubjectName = sortedByNeeds.length > 0 ? (sortedByNeeds[0].name || sortedByNeeds[0].subjectName) : 'None';
   const weakestSyllabus = sortedByNeeds.length > 0 ? sortedByNeeds[0].syllabusRemaining : 0;
 
   // Study Allocations aggregated by Subject
   const allocationsMap = {};
   plan.forEach(item => {
-    allocationsMap[item.subjectName] = (allocationsMap[item.subjectName] || 0) + item.allocatedHours;
+    const name = item.name || item.subjectName;
+    allocationsMap[name] = (allocationsMap[name] || 0) + item.allocatedHours;
   });
   
   // Sort allocations descending
@@ -78,8 +95,6 @@ export default function Analytics() {
     .map(([name, hours]) => ({ name, hours }));
 
   const maxHours = sortedAllocations.length > 0 ? sortedAllocations[0].hours : 1;
-  const highInvestmentSub = sortedAllocations.length > 0 ? sortedAllocations[0].name : 'None';
-  const highInvestmentHours = sortedAllocations.length > 0 ? sortedAllocations[0].hours : 0;
 
   const totalAllocated = plan.reduce((acc, curr) => acc + curr.allocatedHours, 0) || 1;
   
@@ -147,8 +162,13 @@ export default function Analytics() {
   if (loading) {
     return (
       <div className="max-w-7xl mx-auto pb-12 animate-in fade-in duration-500">
-        <div className="text-center py-20 text-text-muted font-bold tracking-widest uppercase">
-          Synthesizing Neural Analytics...
+        <div className="text-center py-20 text-text-muted font-bold tracking-widest uppercase flex items-center justify-center gap-2">
+          Synthesizing Neural Analytics
+          <div className="flex gap-1 ml-2">
+            <span className="neural-dot"></span>
+            <span className="neural-dot"></span>
+            <span className="neural-dot"></span>
+          </div>
         </div>
       </div>
     );
@@ -234,7 +254,7 @@ export default function Analytics() {
             <span className="text-[10px] font-bold text-text-muted tracking-[0.15em] uppercase mb-2 block">Predicted Exam Mastery</span>
             <div className="flex items-end gap-1 mb-2">
                <span className="text-[44px] font-bold tracking-tighter text-text-main leading-none">
-                 {predictedScore !== null ? Math.round(predictedScore) : 'Analyzing'}
+                 {predictedScore !== null ? Math.round(predictedScore) : (subjects.length > 0 ? 'Analyzing' : '0')}
                </span>
                <span className="text-xl font-bold text-text-muted mb-1.5">%</span>
             </div>
@@ -303,26 +323,38 @@ export default function Analytics() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-        <div className="lg:col-span-8 bg-[#0d0e14] rounded-[40px] p-1.5 border border-white/5 shadow-[0_20px_50px_rgba(0,0,0,0.5)] group overflow-hidden relative">
+        <div className="lg:col-span-8 bg-surface rounded-[40px] p-1.5 border border-surface-border shadow-xl group overflow-hidden relative">
           <div className="absolute -top-24 -right-24 w-64 h-64 bg-primary/10 blur-[100px] rounded-full pointer-events-none group-hover:bg-primary/20 transition-all duration-1000"></div>
           
-          <div className="bg-[#111218]/40 backdrop-blur-2xl rounded-[38px] p-10 h-full flex flex-col md:flex-row items-center justify-between gap-12 border border-white/5 relative z-10">
-            <div className="w-64 h-64 relative shrink-0">
-               <div className="absolute inset-0 rounded-full border border-white/5 bg-gradient-to-b from-transparent to-white/5 shadow-inner"></div>
-               <div className="p-6 h-full w-full">
+          <div className="bg-surface-sidebar/40 backdrop-blur-2xl rounded-[38px] p-10 h-full flex flex-col md:flex-row items-center justify-between gap-12 border border-surface-border relative z-10">
+            <div className="w-64 h-64 relative shrink-0 flex items-center justify-center">
+               {/* Background Orbit */}
+               <div className="absolute inset-4 rounded-full border border-surface-border bg-gradient-to-b from-transparent to-surface-hover/20 shadow-inner"></div>
+               
+               {/* The Neural Core (Chart) */}
+               <div className="w-full h-full p-2 relative z-10">
                  <Doughnut data={doughnutData} options={{ 
                    responsive: true, 
-                   cutout: '85%', 
-                   plugins: { tooltip: { enabled: false } },
-                   animation: { duration: 2000, easing: 'easeOutQuart' }
+                   maintainAspectRatio: false,
+                   cutout: '88%', 
+                   rotation: -90,
+                   circumference: 360,
+                   plugins: { 
+                     tooltip: { enabled: false },
+                     legend: { display: false }
+                   },
+                   animation: { duration: 2500, easing: 'easeOutQuart' }
                  }} />
                </div>
-               <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-                 <span className="text-[52px] font-bold text-white tracking-tighter leading-none mb-1 drop-shadow-[0_0_15px_rgba(0,208,132,0.5)]">{deepFlowPct}%</span>
-                 <span className="text-[9px] font-bold tracking-[0.3em] text-primary uppercase opacity-80">Deep Flow</span>
+
+               {/* Central Readout */}
+               <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none z-20">
+                 <span className="text-[52px] font-bold text-text-main tracking-tighter leading-none mb-1 drop-shadow-[0_10_20px_rgba(0,208,132,0.2)]">{deepFlowPct}%</span>
+                 <span className="text-[9px] font-bold tracking-[0.4em] text-primary uppercase opacity-80 pl-[0.4em]">Deep Flow</span>
                </div>
                
-               <div className="absolute top-8 left-8 w-1.5 h-1.5 rounded-full bg-primary shadow-[0_0_15px_rgba(0,208,132,1)] animate-pulse"></div>
+               {/* Status Beacon */}
+               <div className="absolute top-10 left-10 w-2 h-2 rounded-full bg-primary shadow-[0_0_20px_rgba(0,208,132,1)] animate-pulse z-30"></div>
             </div>
   
             <div className="flex-1">
@@ -340,10 +372,10 @@ export default function Analytics() {
               </h2>
               
               <p className="text-text-muted font-medium leading-relaxed max-w-md mb-10 text-[15px]">
-                Current algorithms indicate that <span className="text-white font-bold">{deepFlowPct}%</span> of your schedule is optimized for dense deep-work, facilitating rapid <span className="text-primary italic">synaptogenesis.</span>
+                Current algorithms indicate that <span className="font-bold text-text-main">{deepFlowPct}%</span> of your schedule is optimized for dense deep-work, facilitating rapid <span className="text-primary italic">synaptogenesis.</span>
               </p>
               
-              <div className="grid grid-cols-2 gap-8 border-t border-white/5 pt-8">
+              <div className="grid grid-cols-2 gap-8 border-t border-surface-border pt-8">
                 <div>
                   <span className="text-[10px] font-bold text-text-muted tracking-[0.2em] uppercase mb-1.5 block opacity-60">Peak Performance</span>
                   <span className="text-2xl font-bold text-text-main tracking-tight group-hover:text-primary transition-colors duration-500">08:30 AM</span>
@@ -360,24 +392,47 @@ export default function Analytics() {
         </div>
 
         <div className="lg:col-span-4 flex flex-col gap-6">
-          <div className="bg-gradient-to-br from-[#00d084] to-[#088055] rounded-[32px] p-8 shadow-xl shadow-primary/10 relative overflow-hidden group h-full flex flex-col justify-between">
-            <Rocket size={120} className="absolute -right-6 -bottom-6 text-white/10 group-hover:scale-110 transition-transform duration-700 pointer-events-none" />
+          <div className="bg-primary/5 dark:bg-gradient-to-br from-[#00d084] to-[#088055] rounded-[32px] p-8 border border-primary/20 relative overflow-hidden group h-full flex flex-col justify-between">
+            <Sparkles size={120} className="absolute -right-6 -bottom-6 text-primary/10 dark:text-white/10 group-hover:scale-110 transition-transform duration-700 pointer-events-none" />
             
-            <div>
-              <h3 className="text-xl font-bold text-[#0a0b10] tracking-tight mb-3 relative z-10">Ascension Challenge</h3>
-              <p className="text-[#0a0b10] font-medium leading-relaxed text-sm mb-6 max-w-[200px] relative z-10">
-                Maintain your deep work streak for 3 more days to reach the 'Zenith' tier.
-              </p>
+            <div className="relative z-10 h-full flex flex-col">
+              <div className="flex items-center gap-3 mb-6">
+                 <div className="p-2 bg-primary/20 rounded-xl">
+                    <Rocket size={18} className="text-primary dark:text-[#0a0b10]" />
+                 </div>
+                 <h3 className="text-xl font-bold text-text-main dark:text-[#0a0b10] tracking-tight">Neural Guidance</h3>
+              </div>
+
+              <div className="flex-1">
+                {tipsLoading ? (
+                   <span className="text-[10px] font-bold text-primary dark:text-[#0a0b10]/60 uppercase tracking-widest animate-pulse">Consulting AI...</span>
+                ) : tips.length > 0 ? (
+                  <div className="space-y-4">
+                     {tips.slice(0, 3).map((tip, idx) => (
+                       <div key={idx} className="flex gap-3 items-start animate-in slide-in-from-right-4 duration-500" style={{ animationDelay: `${idx * 150}ms` }}>
+                          <div className="w-1.5 h-1.5 rounded-full bg-primary dark:bg-[#0a0b10] mt-1.5 shrink-0 opacity-40"></div>
+                          <p className="text-text-main dark:text-[#0a0b10] font-bold leading-snug text-sm tracking-tight">{tip}</p>
+                       </div>
+                     ))}
+                  </div>
+                ) : (
+                  <p className="text-text-muted dark:text-[#0a0b10] font-medium leading-relaxed text-sm opacity-80">
+                    Register subjects in the Matrix to receive personalized neural optimization tips.
+                  </p>
+                )}
+              </div>
             </div>
             
-            <div className="flex justify-between items-center relative z-10">
+            <div className="flex justify-between items-center relative z-10 mt-8">
               <div className="flex -space-x-2">
-                <img src="https://api.dicebear.com/7.x/notionists/svg?seed=A" className="w-8 h-8 rounded-full border-2 border-[#00d084] bg-white" alt="user" />
-                <img src="https://api.dicebear.com/7.x/notionists/svg?seed=B" className="w-8 h-8 rounded-full border-2 border-[#00d084] bg-white" alt="user" />
-                <div className="w-8 h-8 rounded-full border-2 border-[#00d084] bg-[#0a0b10] flex items-center justify-center text-[10px] font-bold text-white">+12</div>
+                <div className="w-8 h-8 rounded-full border-2 border-primary bg-surface flex items-center justify-center text-[10px] font-bold text-text-main">AI</div>
+                <div className="w-8 h-8 rounded-full border-2 border-primary bg-surface/40 flex items-center justify-center text-[10px] font-bold text-text-muted">ML</div>
               </div>
-              <button className="bg-[#0a0b10] text-primary hover:bg-[#13151a] px-4 py-2 rounded-full text-xs font-bold tracking-wider uppercase transition-all active:scale-95 hover:scale-105 inline-block border border-transparent hover:border-primary/50">
-                Join Sprint
+              <button 
+                onClick={() => window.location.href='/subjects'}
+                className="bg-primary hover:bg-primary-light text-[#0a0b10] px-4 py-2 rounded-full text-xs font-bold tracking-wider uppercase transition-all active:scale-95 hover:scale-105 inline-block border border-transparent shadow-lg shadow-primary/20"
+              >
+                Provision
               </button>
             </div>
           </div>
@@ -400,4 +455,3 @@ function ProgressBar({ label, val, pct }) {
     </div>
   );
 }
-
