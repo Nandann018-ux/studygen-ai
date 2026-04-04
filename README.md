@@ -22,18 +22,15 @@ StudyGen AI is an AI-powered study planner that generates personalized schedules
 - JavaScript
 
 ### **Backend**
-- Node.js,Express
+- Node.js
+- Express.js
 - MongoDB (Mongoose)
-- JWT Authentication
-
-### **DataSet**
-- Self Generated Data
-
+- JSON Web Tokens (JWT)
 
 ### **Machine Learning**
-- Python (Scikit-learn)
+- Python
+- Scikit-learn
 - RandomForestRegressor for study hour prediction
-- Real-time retraining using user session data
 
 ---
 
